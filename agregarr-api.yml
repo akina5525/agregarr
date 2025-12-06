@@ -255,6 +255,7 @@ components:
               'sonarrtag',
               'comingsoon',
               'filtered_hub',
+              'plex_library',
             ]
           example: 'overseerr'
         subtype:
@@ -812,6 +813,7 @@ components:
               'sonarrtag',
               'comingsoon',
               'filtered_hub',
+              'plex_library',
             ]
           example: 'overseerr'
         subtype:
@@ -1492,6 +1494,7 @@ components:
               'sonarrtag',
               'comingsoon',
               'filtered_hub',
+              'plex_library',
             ]
           example: 'overseerr'
         subtype:
