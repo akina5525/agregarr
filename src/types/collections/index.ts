@@ -161,7 +161,8 @@ export interface CollectionFormConfig {
     | 'radarrtag'
     | 'sonarrtag'
     | 'comingsoon'
-    | 'filtered_hub';
+    | 'filtered_hub'
+    | 'plex_library';
   readonly subtype?: string; // Specific option like 'users', 'most_popular_plays', etc. - optional for hubs/pre-existing
   readonly timePeriod?: 'daily' | 'weekly' | 'monthly' | 'all'; // Time period for Trakt time-based subtypes
   readonly configType?: FormConfigType; // Metadata for form behavior identification
@@ -336,6 +337,10 @@ export interface CollectionFormConfig {
   readonly sortOrder?: CollectionSortOrder; // Sort order for collection items (default: 'default')
   // Collection exclusion settings
   readonly excludeFromCollections?: string[]; // Array of collection IDs to exclude items from (mutual exclusion)
+  // Plex Library director settings
+  readonly directorDepth?: number; // Number of directors to create collections for (for plex_library/directors)
+  readonly directorLimit?: number; // Maximum items per director collection (for plex_library/directors)
+  readonly directorMinimumItems?: number; // Minimum items required to create a director collection (for plex_library/directors)
 
   // Backend properties (from PlexHubConfig) - Present on hub configs from API
   readonly collectionType?: CollectionType; // Simplified categorization system
@@ -408,7 +413,8 @@ export interface CollectionConfigCreateRequest {
     | 'radarrtag'
     | 'sonarrtag'
     | 'comingsoon'
-    | 'filtered_hub';
+    | 'filtered_hub'
+    | 'plex_library';
   readonly subtype?: string;
   readonly template?: string;
   readonly customMovieTemplate?: string;
@@ -776,7 +782,8 @@ export type CollectionSourceType =
   | 'radarrtag'
   | 'sonarrtag'
   | 'comingsoon'
-  | 'filtered_hub';
+  | 'filtered_hub'
+  | 'plex_library';
 export type MediaType = 'movie' | 'tv';
 
 /**

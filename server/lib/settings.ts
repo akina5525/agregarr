@@ -61,7 +61,8 @@ export interface CollectionConfig {
     | 'radarrtag'
     | 'sonarrtag'
     | 'comingsoon'
-    | 'filtered_hub';
+    | 'filtered_hub'
+    | 'plex_library';
   readonly subtype?: string; // Specific option like 'users', 'most_popular_plays', 'most_popular_duration', etc. Optional for types like recently_added
   readonly template: string; // Collection template
   readonly customMovieTemplate?: string; // Custom template for movie collections when mediaType is 'both'
@@ -178,6 +179,10 @@ export interface CollectionConfig {
   readonly sortOrder?: CollectionSortOrder; // Sort order for collection items (default: 'default')
   // Collection exclusion settings
   readonly excludeFromCollections?: string[]; // Array of collection IDs to exclude items from (mutual exclusion)
+  // Plex Library director settings (for plex_library type with directors subtype)
+  readonly directorDepth?: number; // Number of directors to create collections for (default: 5)
+  readonly directorLimit?: number; // Maximum items per director collection (default: 30)
+  readonly directorMinimumItems?: number; // Minimum items required to create a director collection (default: 3)
   // Poster settings
   readonly customPoster?: string | Record<string, string>; // Path to custom poster image file, or per-library poster mapping
   readonly autoPoster?: boolean; // Auto-generate poster during sync (only available for Overseerr user collections)

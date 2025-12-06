@@ -117,6 +117,7 @@ const CollectionTypeSection = ({
     { value: 'sonarrtag', label: 'Sonarr Tag' },
     { value: 'comingsoon', label: 'Coming Soon' },
     { value: 'filtered_hub', label: 'Filtered Plex Hub' },
+    { value: 'plex_library', label: 'Plex Library' },
     { value: 'multi-source', label: 'Multiple Sources' },
   ];
 
@@ -364,6 +365,14 @@ const CollectionTypeSection = ({
               'Replaces Recently Released hub (sorted by release date)',
           },
         ];
+      case 'plex_library':
+        return [
+          {
+            value: 'directors',
+            label: 'Top Directors',
+            description: 'Create collections for top directors in your library',
+          },
+        ];
       default:
         return [];
     }
@@ -555,6 +564,72 @@ const CollectionTypeSection = ({
               max="100"
               className="w-full rounded-md border border-stone-500 bg-stone-700 px-3 py-2 text-white placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
+          </div>
+        </div>
+      )}
+
+      {/* Directors Configuration - appears when type='plex_library' and subtype='directors' */}
+      {values.type === 'plex_library' && values.subtype === 'directors' && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div>
+            <label
+              htmlFor="directorDepth"
+              className="mb-2 block text-sm text-gray-300"
+            >
+              Number of Directors
+            </label>
+            <Field
+              type="number"
+              id="directorDepth"
+              name="directorDepth"
+              placeholder="5"
+              min="1"
+              max="20"
+              className="w-full rounded-md border border-stone-500 bg-stone-700 px-3 py-2 text-white placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              Creates collections for top N directors (default: 5)
+            </p>
+          </div>
+          <div>
+            <label
+              htmlFor="directorLimit"
+              className="mb-2 block text-sm text-gray-300"
+            >
+              Items Per Director
+            </label>
+            <Field
+              type="number"
+              id="directorLimit"
+              name="directorLimit"
+              placeholder="30"
+              min="5"
+              max="100"
+              className="w-full rounded-md border border-stone-500 bg-stone-700 px-3 py-2 text-white placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              Max items per collection (default: 30)
+            </p>
+          </div>
+          <div>
+            <label
+              htmlFor="directorMinimumItems"
+              className="mb-2 block text-sm text-gray-300"
+            >
+              Minimum Items
+            </label>
+            <Field
+              type="number"
+              id="directorMinimumItems"
+              name="directorMinimumItems"
+              placeholder="3"
+              min="1"
+              max="20"
+              className="w-full rounded-md border border-stone-500 bg-stone-700 px-3 py-2 text-white placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              Only create if director has N+ items (default: 3)
+            </p>
           </div>
         </div>
       )}

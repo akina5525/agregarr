@@ -561,10 +561,10 @@ export class CollectionSyncService {
         return new ComingSoonCollectionSync();
       }
       case 'filtered_hub': {
-        const { FilteredHubCollectionSync } = await import(
-          '../external/recentlyadded'
-        );
-        return new FilteredHubCollectionSync();
+        return (await import('../external/recentlyadded')).default;
+      }
+      case 'plex_library': {
+        return (await import('../external/plexlibrary')).default;
       }
       case 'multi-source':
         throw new Error(

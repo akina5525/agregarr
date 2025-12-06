@@ -2409,6 +2409,88 @@ class PlexAPI {
   ): Promise<void> {
     return this.posterManager.updateSummary(ratingKey, summary);
   }
+
+  /**
+   * Get top directors from a library section with their item counts
+   * @param libraryId - Library section ID
+   * @param limit - Maximum number of directors to return (default: unlimited)
+   * @returns Array of directors sorted by item count (descending)
+   */
+  public async getLibraryDirectors(
+    libraryId: string,
+    limit?: number
+  ): Promise<{ name: string; count: number }[]> {
+    try {
+      logger.debug(`Fetching directors from library ${libraryId}`, {
+        label: 'Plex API',
+        libraryId,
+        limit,
+      });
+
+      // Query library for all items with director metadata
+      // We need to fetch all items to aggregate directors properly
+      const response = await this.plexClient.query<{
+        MediaContainer: {
+          totalSize: number;
+          Metadata?: {
+            Director?: { tag: string }[];
+          }[];
+        };
+      }>({
+        uri: `/library/sections/${libraryId}/all`,
+        extraHeaders: {
+          'X-Plex-Container-Size': '0', // Get all items
+        },
+      });
+
+      const items = response.MediaContainer.Metadata || [];
+
+      // Aggregate directors and count their appearances
+      const directorCounts = new Map<string, number>();
+
+      for (const item of items) {
+        if (item.Director && Array.isArray(item.Director)) {
+          for (const director of item.Director) {
+            if (director.tag) {
+              const currentCount = directorCounts.get(director.tag) || 0;
+              directorCounts.set(director.tag, currentCount + 1);
+            }
+          }
+        }
+      }
+
+      // Convert to array and sort by count (descending)
+      let directors = Array.from(directorCounts.entries())
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count);
+
+      // Apply limit if specified
+      if (limit && limit > 0) {
+        directors = directors.slice(0, limit);
+      }
+
+      logger.info(
+        `Found ${directorCounts.size} unique directors in library ${libraryId}`,
+        {
+          label: 'Plex API',
+          libraryId,
+          totalDirectors: directorCounts.size,
+          returned: directors.length,
+          topDirectors: directors.slice(0, 5).map((d) => `${d.name} (${d.count})`),
+        }
+      );
+
+      return directors;
+    } catch (error) {
+      logger.error(`Failed to fetch directors from library ${libraryId}`, {
+        label: 'Plex API',
+        libraryId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
 }
 
 export default PlexAPI;
+
