@@ -254,6 +254,37 @@ collectionsRoutes.put('/:id/settings', isAuthenticated(), async (req, res) => {
 
     const existingConfig = configs[existingConfigIndex];
 
+    // Debug logging for director settings payload
+    if (
+      req.body?.type === 'plex_library' &&
+      req.body?.subtype === 'directors'
+    ) {
+      const maybeNumber = (value: unknown): number | undefined => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      };
+      const coercedMinimum = maybeNumber(req.body.directorMinimumItems);
+
+      if (coercedMinimum === 1) {
+        return res.status(400).json({
+          error: 'Director minimum items must be at least 2',
+          message: 'Director collections require a minimum of 2 items, 1 is not allowed',
+        });
+      }
+
+      if (coercedMinimum !== undefined) {
+        req.body.directorMinimumItems = coercedMinimum;
+      }
+
+      logger.info('Updating plex_library/directors config', {
+        label: 'Collections API',
+        id,
+        incomingDirectorMinimumItems: req.body.directorMinimumItems,
+        rawBodyKeys: Object.keys(req.body || {}),
+        rawBody: req.body,
+      });
+    }
+
     // Check if this is a linked collection - if so, update all linked configs
     const configsToUpdate = [];
     if (existingConfig.isLinked && existingConfig.linkId) {

@@ -328,6 +328,8 @@ const CollectionSettings = ({
           applyOverlaysDuringSync: config.applyOverlaysDuringSync,
           showUnwatchedOnly: config.showUnwatchedOnly,
           smartCollectionSort: config.smartCollectionSort,
+          // Plex Library directors
+          directorMinimumItems: config.directorMinimumItems,
           randomizeHomeOrder: config.randomizeHomeOrder,
           customWallpaper: config.customWallpaper,
           customSummary: config.customSummary,

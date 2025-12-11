@@ -139,9 +139,14 @@ const PosterUploadSection = ({
 
   // Get current selected template - if none selected, use the default template
   const defaultTemplate = templates?.find((t) => t.isDefault);
+  const directorTemplate =
+    templates?.find((t) => t.name === 'Person Spotlight') ||
+    templates?.find((t) => t.name === 'Director Spotlight');
   const selectedTemplateId =
     values.autoPosterTemplate || defaultTemplate?.id || null;
   const selectedTemplate = templates?.find((t) => t.id === selectedTemplateId);
+  const isDirectorCollection =
+    values.type === 'plex_library' && values.subtype === 'directors';
 
   const handleAutoPosterChange = (enabled: boolean) => {
     setFieldValue('autoPoster', enabled);
@@ -153,10 +158,31 @@ const PosterUploadSection = ({
 
   // Auto-select default template when templates load and no template is currently selected
   useEffect(() => {
-    if (templates && !values.autoPosterTemplate && defaultTemplate) {
+    if (!templates) {
+      return;
+    }
+
+    if (
+      isDirectorCollection &&
+      directorTemplate &&
+      (!values.autoPosterTemplate ||
+        values.autoPosterTemplate === defaultTemplate?.id)
+    ) {
+      setFieldValue('autoPosterTemplate', directorTemplate.id);
+      return;
+    }
+
+    if (!values.autoPosterTemplate && defaultTemplate) {
       setFieldValue('autoPosterTemplate', defaultTemplate.id);
     }
-  }, [templates, values.autoPosterTemplate, defaultTemplate, setFieldValue]);
+  }, [
+    templates,
+    values.autoPosterTemplate,
+    defaultTemplate,
+    directorTemplate,
+    isDirectorCollection,
+    setFieldValue,
+  ]);
 
   const handleRemovePoster = (libraryId: string) => {
     const updatedPosters = { ...currentPosters };
