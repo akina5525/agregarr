@@ -39,7 +39,7 @@ export type EditorMode =
 export interface LayeredElement {
   id: string;
   layerOrder: number; // 0 = bottom, higher = top
-  type: 'text' | 'raster' | 'svg' | 'content-grid' | 'person';
+  type: 'text' | 'raster' | 'svg' | 'content-grid';
 
   // Common properties
   x: number;
@@ -53,8 +53,7 @@ export interface LayeredElement {
     | TextElementProps
     | RasterElementProps
     | SVGElementProps
-    | ContentGridProps
-    | PersonElementProps;
+    | ContentGridProps;
 }
 
 export interface TextElementProps {
@@ -70,16 +69,10 @@ export interface TextElementProps {
   // Text-specific source colors for templates
   useSourceColors?: boolean;
   sourceColorType?: string;
-  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
 }
 
 export interface RasterElementProps {
   imagePath: string; // Path to uploaded raster image
-}
-
-export interface PersonElementProps extends Partial<RasterElementProps> {
-  overlayColor?: string;
-  overlayOpacity?: number;
 }
 
 export interface SVGElementProps {

@@ -133,7 +133,6 @@ export function calculatePosterInputHash(config: {
   collectionType?: string;
   collectionSubtype?: string;
   additionalContext?: Record<string, unknown>;
-  personImageUrl?: string;
 }): string {
   return calculateInputHash({
     templateId: config.templateId,
@@ -144,7 +143,6 @@ export function calculatePosterInputHash(config: {
     collectionType: config.collectionType,
     collectionSubtype: config.collectionSubtype,
     additionalContext: config.additionalContext,
-    personImageUrl: config.personImageUrl,
   });
 }
 

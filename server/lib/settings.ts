@@ -57,7 +57,6 @@ export interface CollectionConfig {
     | 'originals'
     | 'myanimelist'
     | 'anilist'
-    | 'plex_library'
     | 'multi-source'
     | 'radarrtag'
     | 'sonarrtag'
@@ -177,8 +176,6 @@ export interface CollectionConfig {
   readonly sonarrInstanceId?: number; // Selected Sonarr instance ID for tag-based collections
   // Generic ordering options (applicable to all collection types)
   readonly sortOrder?: CollectionSortOrder; // Sort order for collection items (default: 'default')
-  // Plex Library director settings (for plex_library/directors)
-  readonly directorMinimumItems?: number; // Minimum items required to create a director collection (default: 5)
   // Collection exclusion settings
   readonly excludeFromCollections?: string[]; // Array of collection IDs to exclude items from (mutual exclusion)
   // Poster settings
@@ -1352,74 +1349,41 @@ class Settings {
 
     this.data.plex.collectionConfigs = this.data.plex.collectionConfigs.map(
       (config) => {
-        let updatedConfig = { ...config };
-        let changed = false;
-
-        // Ensure plex_library/directors configs carry required defaults
-        if (
-          updatedConfig.type === 'plex_library' &&
-          updatedConfig.subtype === 'directors'
-        ) {
-          if (updatedConfig.directorMinimumItems === undefined) {
-            updatedConfig.directorMinimumItems = 5;
-            changed = true;
-          }
-          // Standardize template/name so placeholder text doesn't leak through
-          if (!updatedConfig.template || updatedConfig.template === 'Collection') {
-            updatedConfig.template = '{director}';
-            changed = true;
-          }
-          if (
-            updatedConfig.name === '{director}' ||
-            !updatedConfig.name ||
-            updatedConfig.name === 'Collection'
-          ) {
-            updatedConfig.name = 'Auto Director Collections';
-            changed = true;
-          }
-        }
-
         const isVisibleOnHome =
-          updatedConfig.visibilityConfig?.usersHome ||
-          updatedConfig.visibilityConfig?.serverOwnerHome ||
-          updatedConfig.visibilityConfig?.libraryRecommended;
+          config.visibilityConfig?.usersHome ||
+          config.visibilityConfig?.serverOwnerHome ||
+          config.visibilityConfig?.libraryRecommended;
 
         // Check if normalization is needed
         const needsNormalization =
           (!isVisibleOnHome &&
-            updatedConfig.sortOrderHome &&
-            updatedConfig.sortOrderHome > 0) ||
-          (updatedConfig.isLibraryPromoted === true &&
-            (!updatedConfig.sortOrderLibrary ||
-              updatedConfig.sortOrderLibrary === 0)) ||
-          (updatedConfig.isLibraryPromoted === false &&
-            updatedConfig.sortOrderLibrary &&
-            updatedConfig.sortOrderLibrary > 0) ||
-          updatedConfig.everLibraryPromoted === undefined;
+            config.sortOrderHome &&
+            config.sortOrderHome > 0) ||
+          (config.isLibraryPromoted === true &&
+            (!config.sortOrderLibrary || config.sortOrderLibrary === 0)) ||
+          (config.isLibraryPromoted === false &&
+            config.sortOrderLibrary &&
+            config.sortOrderLibrary > 0) ||
+          config.everLibraryPromoted === undefined;
 
         if (needsNormalization) {
-          updatedConfig = {
-            ...updatedConfig,
+          fixedCount++;
+          return {
+            ...config,
             // Visibility rule: Only visible collections get positioning
             sortOrderHome: isVisibleOnHome ? config.sortOrderHome : 0,
             // Consistency rule: Library positioning matches promotion status
-            sortOrderLibrary: updatedConfig.isLibraryPromoted
-              ? updatedConfig.sortOrderLibrary
+            sortOrderLibrary: config.isLibraryPromoted
+              ? config.sortOrderLibrary
               : 0,
             // Historical rule: Track promotion history
             everLibraryPromoted:
-              updatedConfig.isLibraryPromoted ||
-              (updatedConfig.everLibraryPromoted ?? false),
+              config.isLibraryPromoted || (config.everLibraryPromoted ?? false),
             // No isPromotedToHub changes (calculated dynamically)
           };
-          changed = true;
         }
 
-        if (changed) {
-          fixedCount++;
-        }
-
-        return updatedConfig;
+        return config;
       }
     );
 
@@ -1656,35 +1620,6 @@ class Settings {
 
     this.data.completedMigrations.push(migrationId);
     this.save();
-  }
-
-  /**
-   * Ensure plex_library/directors configs have required defaults and naming
-   */
-  public migratePlexLibraryDirectorsDefaults(): void {
-    const migrationId = 'plex-library-directors-defaults-v1';
-
-    if (!this.data.completedMigrations) {
-      this.data.completedMigrations = [];
-    }
-
-    if (this.data.completedMigrations.includes(migrationId)) {
-      return;
-    }
-
-    const fixed = this.normalizeCollectionConfigs();
-
-    this.data.completedMigrations.push(migrationId);
-
-    if (fixed > 0) {
-      logger.info(
-        `Applied director defaults to ${fixed} plex_library/directors config(s)`,
-        { label: 'Settings Migration' }
-      );
-      this.save();
-    } else {
-      this.save();
-    }
   }
 
   /**

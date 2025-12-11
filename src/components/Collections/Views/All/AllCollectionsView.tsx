@@ -777,11 +777,8 @@ const AllCollectionsView: React.FC = () => {
             let isLinked = false;
             let isUnlinked = false;
 
-            let originalCollectionConfig: CollectionFormConfig | undefined;
-
             if (isCollection && collection.originalConfig) {
               const config = collection.originalConfig as CollectionFormConfig;
-              originalCollectionConfig = config;
               visibilityConfig = config.visibilityConfig;
               timeRestriction = config.timeRestriction;
               isLinked = Boolean(config.isLinked);
@@ -808,12 +805,10 @@ const AllCollectionsView: React.FC = () => {
                         {collection.name === 'DYNAMIC_RANDOM_TITLE' ? (
                           <em>Title will be updated on Collection Sync</em>
                         ) : isCollection &&
-                          originalCollectionConfig?.type === 'plex_library' &&
-                          originalCollectionConfig?.subtype === 'directors' ? (
-                          'Auto Director Collections'
-                        ) : isCollection &&
-                          originalCollectionConfig?.type === 'tmdb' &&
-                          originalCollectionConfig?.subtype === 'auto_franchise' ? (
+                          (collection.originalConfig as CollectionFormConfig)
+                            .type === 'tmdb' &&
+                          (collection.originalConfig as CollectionFormConfig)
+                            .subtype === 'auto_franchise' ? (
                           'Auto Franchise Collections'
                         ) : (
                           collection.name || 'Unnamed Collection'

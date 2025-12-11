@@ -1214,28 +1214,18 @@ export class HubSyncService {
 
         if (config.isLibraryPromoted && config.sortOrderLibrary > 0) {
           // Promoted: Set exclamation marks
-          const sameLibraryPreExisting = preExistingConfigs.filter(
+          const sameLibraryConfigs = preExistingConfigs.filter(
             (c) =>
               c.libraryId === config.libraryId &&
               c.sortOrderLibrary !== undefined &&
               c.isLibraryPromoted === true
           );
 
-          const collectionConfigs = settings.plex.collectionConfigs || [];
-          const sameLibraryCollections = collectionConfigs.filter(
-            (c) =>
-              c.libraryId === config.libraryId &&
-              c.sortOrderLibrary !== undefined &&
-              c.isLibraryPromoted === true
-          );
-
-          const combinedSortOrders = [
-            ...sameLibraryPreExisting.map((c) => c.sortOrderLibrary),
-            ...sameLibraryCollections.map((c) => c.sortOrderLibrary),
-          ].filter((order): order is number => order !== undefined);
-
-          if (combinedSortOrders.length > 0) {
-            const maxSortOrder = Math.max(...combinedSortOrders);
+          if (sameLibraryConfigs.length > 0) {
+            const sortOrders = sameLibraryConfigs
+              .map((c) => c.sortOrderLibrary)
+              .filter((order): order is number => order !== undefined);
+            const maxSortOrder = Math.max(...sortOrders);
             const exclamationCount = maxSortOrder - config.sortOrderLibrary + 2;
             const exclamationPrefix = '!'.repeat(exclamationCount);
             sortTitle = `${exclamationPrefix}${config.name}`;

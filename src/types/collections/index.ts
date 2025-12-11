@@ -154,7 +154,6 @@ export interface CollectionFormConfig {
     | 'letterboxd'
     | 'anilist'
     | 'myanimelist'
-    | 'plex_library'
     | 'mdblist'
     | 'networks'
     | 'originals'
@@ -335,8 +334,6 @@ export interface CollectionFormConfig {
   readonly sonarrTagId?: number; // Selected Sonarr tag ID for tag-based collections
   // Generic ordering options (applicable to all collection types)
   readonly sortOrder?: CollectionSortOrder; // Sort order for collection items (default: 'default')
-  // Plex Library director settings
-  readonly directorMinimumItems?: number; // Minimum items required to create a director collection (for plex_library/directors)
   // Collection exclusion settings
   readonly excludeFromCollections?: string[]; // Array of collection IDs to exclude items from (mutual exclusion)
 
@@ -404,7 +401,6 @@ export interface CollectionConfigCreateRequest {
     | 'letterboxd'
     | 'anilist'
     | 'myanimelist'
-    | 'plex_library'
     | 'mdblist'
     | 'networks'
     | 'originals'
@@ -501,8 +497,6 @@ export interface CollectionConfigCreateRequest {
   readonly radarrTagId?: number;
   readonly sonarrTagId?: number;
   readonly sortOrder?: CollectionSortOrder;
-  // Plex Library director settings (also accepted by create requests)
-  readonly directorMinimumItems?: number; // Minimum items required to create a director collection (for plex_library/directors)
   readonly excludeFromCollections?: string[];
   readonly timeRestriction?: {
     readonly alwaysActive: boolean;
@@ -624,7 +618,6 @@ export const toCollectionCreateRequest = (
     radarrTagId: config.radarrTagId,
     sonarrTagId: config.sonarrTagId,
     sortOrder: config.sortOrder,
-    directorMinimumItems: config.directorMinimumItems,
     excludeFromCollections: config.excludeFromCollections,
     timeRestriction: config.timeRestriction,
     customPoster: config.customPoster,
@@ -779,7 +772,6 @@ export type CollectionSourceType =
   | 'originals'
   | 'anilist'
   | 'myanimelist'
-  | 'plex_library'
   | 'multi-source'
   | 'radarrtag'
   | 'sonarrtag'
