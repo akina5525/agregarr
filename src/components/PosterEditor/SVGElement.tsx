@@ -37,15 +37,16 @@ export const SVGElement: React.FC<SVGElementComponentProps> = ({
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const groupRef = useRef<Konva.Group | null>(null);
 
-  // Determine SVG path (normalize plex_library to plex icon)
+  const normalizedType =
+    previewCollectionConfig?.type === 'plex_library'
+      ? 'plex'
+      : previewCollectionConfig?.type;
+
+  // Determine SVG path (normalize legacy plex_library to plex icon)
   const svgPath =
     props.iconType === 'source-logo'
-      ? previewCollectionConfig?.type
-        ? `/services/${
-            previewCollectionConfig.type === 'plex_library'
-              ? 'plex'
-              : previewCollectionConfig.type
-          }.svg`
+      ? normalizedType
+        ? `/services/${normalizedType}.svg`
         : '/services/os_icon.svg' // Agregarr logo as placeholder
       : props.iconPath || '';
 

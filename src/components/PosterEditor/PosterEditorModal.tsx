@@ -187,7 +187,7 @@ const buildPreviewCollectionName = (collection?: {
   }
 
   if (
-    collection?.type === 'plex_library' &&
+    collection?.type === 'plex' &&
     (collection?.subtype === 'actors' || collection?.subtype === 'directors')
   ) {
     return PERSON_PREVIEW_NAMES[collection.subtype];

@@ -57,7 +57,7 @@ export interface CollectionConfig {
     | 'originals'
     | 'myanimelist'
     | 'anilist'
-    | 'plex_library'
+    | 'plex'
     | 'multi-source'
     | 'radarrtag'
     | 'sonarrtag'
@@ -177,10 +177,13 @@ export interface CollectionConfig {
   readonly sonarrInstanceId?: number; // Selected Sonarr instance ID for tag-based collections
   // Generic ordering options (applicable to all collection types)
   readonly sortOrder?: CollectionSortOrder; // Sort order for collection items (default: 'default')
-  // Plex Library director settings (for plex_library/directors)
+  // Plex Library director settings (for plex/directors)
   readonly directorMinimumItems?: number; // Minimum items required to create a director collection (default: 5)
-  // Plex Library actor settings (for plex_library/actors)
+  // Plex Library actor settings (for plex/actors)
   readonly actorMinimumItems?: number; // Minimum items required to create an actor collection (default: 5)
+  // Plex Library separator settings for auto person collections
+  readonly useSeparator?: boolean; // Create a separator collection for actors/directors multi-collections
+  readonly separatorTitle?: string; // Custom title for the separator collection
   // Collection exclusion settings
   readonly excludeFromCollections?: string[]; // Array of collection IDs to exclude items from (mutual exclusion)
   // Poster settings
@@ -763,6 +766,52 @@ class Settings {
     if (migratedCount > 0) {
       logger.info(
         `Migrated ${migratedCount} collection(s) to sortOrder enum format`,
+        {
+          label: 'Settings Migration',
+        }
+      );
+    }
+
+    this.data.completedMigrations.push(migrationId);
+    this.save();
+  }
+
+  /**
+   * Rename legacy plex_library type slug to plex
+   */
+  public migratePlexLibraryTypeRename(): void {
+    const migrationId = 'plex-library-type-rename-v1';
+
+    if (!this.data.completedMigrations) {
+      this.data.completedMigrations = [];
+    }
+
+    if (this.data.completedMigrations.includes(migrationId)) {
+      return;
+    }
+
+    if (!this.data.plex.collectionConfigs) {
+      this.data.completedMigrations.push(migrationId);
+      this.save();
+      return;
+    }
+
+    let migratedCount = 0;
+
+    this.data.plex.collectionConfigs = this.data.plex.collectionConfigs.map(
+      (config) => {
+        const rawType = (config as { type?: string }).type;
+        if (rawType === 'plex_library') {
+          migratedCount++;
+          return { ...config, type: 'plex' as CollectionConfig['type'] };
+        }
+        return config;
+      }
+    );
+
+    if (migratedCount > 0) {
+      logger.info(
+        `Renamed ${migratedCount} plex_library collection config(s) to plex`,
         {
           label: 'Settings Migration',
         }
@@ -1357,9 +1406,9 @@ class Settings {
         let updatedConfig = { ...config };
         let changed = false;
 
-        // Ensure plex_library person configs carry required defaults
+        // Ensure plex person configs carry required defaults
         if (
-          updatedConfig.type === 'plex_library' &&
+          updatedConfig.type === 'plex' &&
           (updatedConfig.subtype === 'directors' ||
             updatedConfig.subtype === 'actors')
         ) {
@@ -1389,6 +1438,23 @@ class Settings {
             updatedConfig.name = isActors
               ? 'Auto Actor Collections'
               : 'Auto Director Collections';
+            changed = true;
+          }
+          if (updatedConfig.useSeparator) {
+            const defaultSeparatorTitle = isActors
+              ? 'Actor Collections'
+              : 'Director Collections';
+            const sanitizedTitle = updatedConfig.separatorTitle?.trim();
+            if (!sanitizedTitle) {
+              updatedConfig.separatorTitle = defaultSeparatorTitle;
+              changed = true;
+            } else if (sanitizedTitle !== updatedConfig.separatorTitle) {
+              updatedConfig.separatorTitle = sanitizedTitle;
+              changed = true;
+            }
+          } else if (updatedConfig.separatorTitle) {
+            // Cleanup stale separator titles when feature is off
+            updatedConfig.separatorTitle = undefined;
             changed = true;
           }
         }
@@ -1673,7 +1739,7 @@ class Settings {
   }
 
   /**
-   * Ensure plex_library/directors configs have required defaults and naming
+   * Ensure plex/directors configs have required defaults and naming
    */
   public migratePlexLibraryDirectorsDefaults(): void {
     const migrationId = 'plex-library-directors-defaults-v1';
@@ -1692,7 +1758,7 @@ class Settings {
 
     if (fixed > 0) {
       logger.info(
-        `Applied director defaults to ${fixed} plex_library/directors config(s)`,
+        `Applied director defaults to ${fixed} plex/directors config(s)`,
         { label: 'Settings Migration' }
       );
       this.save();

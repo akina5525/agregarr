@@ -984,7 +984,7 @@ export const getTemplatePresets = (
   }
 
   // Plex Library (auto director collections)
-  if (values.type === 'plex_library') {
+  if (values.type === 'plex') {
     switch (values.subtype) {
       case 'directors':
         return [

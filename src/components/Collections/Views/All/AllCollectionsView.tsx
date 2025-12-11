@@ -808,7 +808,7 @@ const AllCollectionsView: React.FC = () => {
                         {collection.name === 'DYNAMIC_RANDOM_TITLE' ? (
                           <em>Title will be updated on Collection Sync</em>
                         ) : isCollection &&
-                          originalCollectionConfig?.type === 'plex_library' &&
+                          originalCollectionConfig?.type === 'plex' &&
                           (originalCollectionConfig?.subtype === 'directors' ||
                             originalCollectionConfig?.subtype === 'actors') ? (
                           originalCollectionConfig?.subtype === 'actors'

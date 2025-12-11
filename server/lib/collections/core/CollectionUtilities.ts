@@ -400,7 +400,7 @@ export function findCollectionByConfigId(
 
   // Special handling for Plex Library person collections (directors/actors)
   if (
-    configType === 'plex_library' &&
+    configType === 'plex' &&
     (configSubtype === 'directors' || configSubtype === 'actors')
   ) {
     const prefix = `AgregarrAuto${

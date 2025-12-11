@@ -867,7 +867,7 @@ export abstract class BaseCollectionSync implements CollectionSyncInterface {
     const isMultiCollectionPattern =
       (config.type === 'overseerr' && config.subtype === 'users') ||
       (config.type === 'tmdb' && config.subtype === 'auto_franchise') ||
-      (config.type === 'plex_library' &&
+      (config.type === 'plex' &&
         (config.subtype === 'directors' || config.subtype === 'actors'));
     if (updateResult.collectionRatingKey && !isMultiCollectionPattern) {
       this.updateConfigWithRatingKey(config, updateResult.collectionRatingKey);
@@ -1367,7 +1367,7 @@ export abstract class BaseCollectionSync implements CollectionSyncInterface {
       const isMultiCollectionPattern =
         (config?.type === 'overseerr' && config?.subtype === 'users') ||
         (config?.type === 'tmdb' && config?.subtype === 'auto_franchise') ||
-        (config?.type === 'plex_library' &&
+        (config?.type === 'plex' &&
           (config?.subtype === 'directors' || config?.subtype === 'actors'));
       if (config?.collectionRatingKey && !isMultiCollectionPattern) {
         try {
@@ -3209,7 +3209,7 @@ export abstract class BaseCollectionSync implements CollectionSyncInterface {
       });
 
       const isPersonCollection =
-        config.type === 'plex_library' &&
+        config.type === 'plex' &&
         (config.subtype === 'directors' || config.subtype === 'actors');
       let resolvedTemplateId = config.autoPosterTemplate ?? null;
 

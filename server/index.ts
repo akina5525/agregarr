@@ -58,6 +58,9 @@ app
     // Initialize sync status for existing collections (one-time migration)
     settings.initializeSyncStatusForExistingCollections();
 
+    // Rename legacy plex_library type to plex
+    settings.migratePlexLibraryTypeRename();
+
     // Complete collection data normalization migration for v1.1.0
     // Replaces 4 incomplete migrations with comprehensive field normalization
     settings.migrateCollectionDataNormalizationV110();

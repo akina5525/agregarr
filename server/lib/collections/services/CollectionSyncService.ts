@@ -566,7 +566,7 @@ export class CollectionSyncService {
         );
         return new FilteredHubCollectionSync();
       }
-      case 'plex_library': {
+      case 'plex': {
         const { PlexLibraryCollectionSync } = await import(
           '../external/plexlibrary'
         );

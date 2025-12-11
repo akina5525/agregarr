@@ -102,13 +102,13 @@ async function seedDefaultTemplate() {
         intensity: 55,
         useSourceColors: false,
       },
-      elements: [
-        {
-          id: 'person-backdrop',
-          layerOrder: 5,
-          type: 'person',
-          x: 0,
-          y: 0,
+    elements: [
+      {
+        id: 'person-backdrop',
+        layerOrder: 5,
+        type: 'person',
+        x: 0,
+        y: 0,
         width: 1000,
         height: 1500,
         properties: {
@@ -169,6 +169,41 @@ async function seedDefaultTemplate() {
             color: '#ffffff',
             textAlign: 'left',
             maxLines: 3,
+            textTransform: 'uppercase',
+          } as TextElementProps,
+        },
+      ],
+      migrated: true,
+    };
+
+    const separatorTemplateData: PosterTemplateData = {
+      width: 1000,
+      height: 1500,
+      background: {
+        type: 'gradient',
+        color: '#2b2d32',
+        secondaryColor: '#1f2024',
+        intensity: 55,
+        useSourceColors: false,
+      },
+      elements: [
+        {
+          id: 'seperator-text',
+          layerOrder: 10,
+          type: 'text',
+          x: 80,
+          y: 560,
+          width: 840,
+          height: 200,
+          properties: {
+            elementType: 'collection-title',
+            fontSize: 96,
+            fontFamily: 'Inter',
+            fontWeight: 'bold',
+            fontStyle: 'normal',
+            color: '#e2e5e8',
+            textAlign: 'center',
+            maxLines: 2,
             textTransform: 'uppercase',
           } as TextElementProps,
         },
@@ -237,6 +272,42 @@ async function seedDefaultTemplate() {
       const savedTemplate = await templateRepository.save(personTemplate);
 
       logger.info('Seeded person poster template', {
+        templateId: savedTemplate.id,
+        name: savedTemplate.name,
+      });
+    }
+
+    // Seed separator template for grouping collections
+    const separatorTemplateName = 'Seperator';
+    const existingSeparatorTemplate = await templateRepository.findOne({
+      where: { name: separatorTemplateName },
+    });
+
+    if (existingSeparatorTemplate) {
+      existingSeparatorTemplate.name = separatorTemplateName;
+      existingSeparatorTemplate.setTemplateData(separatorTemplateData);
+      existingSeparatorTemplate.isActive = true;
+      existingSeparatorTemplate.isDefault = false;
+      existingSeparatorTemplate.description =
+        'Dark gradient title card for separators that sit before auto-generated collections.';
+      await templateRepository.save(existingSeparatorTemplate);
+      logger.info('Separator poster template refreshed', {
+        templateId: existingSeparatorTemplate.id,
+        name: existingSeparatorTemplate.name,
+      });
+    } else {
+      const separatorTemplate = new PosterTemplate({
+        name: separatorTemplateName,
+        description:
+          'Dark gradient title card for separators that sit before auto-generated collections.',
+        isDefault: false,
+        isActive: true,
+      });
+
+      separatorTemplate.setTemplateData(separatorTemplateData);
+      const savedTemplate = await templateRepository.save(separatorTemplate);
+
+      logger.info('Seeded separator poster template', {
         templateId: savedTemplate.id,
         name: savedTemplate.name,
       });

@@ -1,3 +1,5 @@
+import { getRepository } from '@server/datasource';
+import { PosterTemplate } from '@server/entity/PosterTemplate';
 /**
  * Plex Library Collection Sync
  *
@@ -25,7 +27,11 @@ import type {
   SyncResult,
 } from '@server/lib/collections/core/types';
 import { CollectionSyncErrorType } from '@server/lib/collections/core/types';
-import { getTmdbLanguage, type CollectionConfig } from '@server/lib/settings';
+import {
+  getTmdbLanguage,
+  getSettings,
+  type CollectionConfig,
+} from '@server/lib/settings';
 import logger from '@server/logger';
 import fs from 'fs';
 import os from 'os';
@@ -42,6 +48,7 @@ type PersonCollectionSubtype = 'directors' | 'actors';
 
 const DIRECTOR_POSTER_WIDTH = 1000;
 const DIRECTOR_POSTER_HEIGHT = 1500;
+const DEFAULT_SEPARATOR_POSTER = 'generated_seperator.jpg';
 
 function escapeXml(value: string): string {
   return value
@@ -54,7 +61,7 @@ function escapeXml(value: string): string {
 
 export class PlexLibraryCollectionSync extends BaseCollectionSync {
   constructor() {
-    super('plex_library');
+    super('plex');
   }
 
   private getPersonTypeLabel(subtype: PersonCollectionSubtype): string {
@@ -68,6 +75,80 @@ export class PlexLibraryCollectionSync extends BaseCollectionSync {
     const labelType =
       subtype === 'actors' ? 'AgregarrAutoActor' : 'AgregarrAutoDirector';
     return `${labelType}-${configId}-`;
+  }
+
+  private getSeparatorLabel(configId: string): string {
+    return `AgregarrPersonSeparator-${configId}`;
+  }
+
+  private getSeparatorTitle(config: CollectionConfig): string {
+    const fallback =
+      config.subtype === 'actors'
+        ? 'Actor Collections'
+        : 'Director Collections';
+    const title = config.separatorTitle?.trim();
+    return title && title.length > 0 ? title : fallback;
+  }
+
+  private normalizeLabel(label: string | PlexLabel): string {
+    return typeof label === 'string'
+      ? label.toLowerCase()
+      : (label.tag || '').toLowerCase();
+  }
+
+  private buildSeparatorSortTitle(
+    config: CollectionConfig,
+    baseTitle: string
+  ): string {
+    const settings = getSettings();
+    const sortOrderLibrary = config.sortOrderLibrary;
+    const isPromoted = config.isLibraryPromoted;
+
+    if (sortOrderLibrary !== undefined && isPromoted) {
+      const allConfigs = settings.plex.collectionConfigs || [];
+      const promotedConfigs = allConfigs.filter(
+        (c) =>
+          c.libraryId === config.libraryId &&
+          c.sortOrderLibrary !== undefined &&
+          c.isLibraryPromoted === true
+      );
+
+      const maxSortOrder =
+        promotedConfigs.length > 0
+          ? Math.max(
+              ...promotedConfigs
+                .map((c) => c.sortOrderLibrary)
+                .filter((v): v is number => v !== undefined)
+            )
+          : 0;
+
+      const exclamationCount = maxSortOrder
+        ? maxSortOrder - sortOrderLibrary + 2
+        : 2;
+      // Add a digit after the prefix so it sorts before alpha titles but after plain '!'
+      const prefix = '!'.repeat(Math.max(1, exclamationCount));
+      return `${prefix}0${baseTitle}`;
+    }
+
+    // Non-promoted: use a digit so it stays ahead of alpha names in A-Z buckets
+    return `0${baseTitle}`;
+  }
+
+  private async resolveSeparatorTemplateId(): Promise<number | null> {
+    try {
+      const templateRepository = getRepository(PosterTemplate);
+      const template = await templateRepository.findOne({
+        where: { name: 'Seperator', isActive: true },
+      });
+
+      return template?.id ?? null;
+    } catch (error) {
+      logger.warn('Failed to resolve Seperator poster template', {
+        label: 'Plex Library Collections',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
   }
 
   private async setPersonBioAsDescription(
@@ -394,6 +475,248 @@ export class PlexLibraryCollectionSync extends BaseCollectionSync {
     });
   }
 
+  private findSeparatorCollection(
+    allCollections: PlexCollection[],
+    label: string,
+    title: string,
+    libraryId: string
+  ): PlexCollection | undefined {
+    const normalizedLabel = label.toLowerCase();
+    const normalizedTitle = title.toLowerCase();
+
+    return allCollections.find((collection) => {
+      if (collection.libraryKey !== libraryId) {
+        return false;
+      }
+
+      const labels = Array.isArray(collection.labels)
+        ? collection.labels
+        : [];
+
+      const hasLabel = labels.some(
+        (label: string | PlexLabel) =>
+          this.normalizeLabel(label) === normalizedLabel
+      );
+
+      return (
+        hasLabel ||
+        (collection.title &&
+          collection.title.toLowerCase() === normalizedTitle)
+      );
+    });
+  }
+
+  private async syncSeparatorCollection(
+    config: CollectionConfig,
+    plexClient: PlexAPI,
+    allCollections: PlexCollection[],
+    mediaType: 'movie' | 'tv',
+    processedCollectionKeys?: Set<string>
+  ): Promise<void> {
+    const separatorLabel = this.getSeparatorLabel(config.id);
+    const separatorTitle = this.getSeparatorTitle(config);
+
+    try {
+      const existingCollection =
+        this.findSeparatorCollection(
+          allCollections,
+          separatorLabel,
+          separatorTitle,
+          config.libraryId
+        ) ||
+        (await plexClient.getCollectionByName(
+          separatorTitle,
+          config.libraryId
+        ));
+
+      let ratingKey: string | null | undefined =
+        existingCollection?.ratingKey;
+
+      if (!ratingKey) {
+        ratingKey = await plexClient.createEmptyCollection(
+          separatorTitle,
+          config.libraryId,
+          mediaType
+        );
+      }
+
+      if (!ratingKey) {
+        logger.warn(
+          `Failed to create separator collection for ${config.subtype}`,
+          {
+            label: 'Plex Library Collections',
+            configId: config.id,
+            libraryId: config.libraryId,
+          }
+        );
+        return;
+      }
+
+      const separatorRatingKey = ratingKey as string;
+
+      processedCollectionKeys?.add(separatorRatingKey);
+
+      const visibilityConfig: CollectionVisibilityConfig = {
+        usersHome: config.visibilityConfig?.usersHome ?? false,
+        serverOwnerHome: config.visibilityConfig?.serverOwnerHome ?? false,
+        libraryRecommended: config.visibilityConfig?.libraryRecommended ?? false,
+        isActive: config.isActive ?? true,
+      };
+
+      await this.updateCollectionMetadata(
+        plexClient,
+        separatorRatingKey,
+        {
+          collectionName: separatorTitle,
+          mediaType,
+          visibilityConfig,
+          customLabel: separatorLabel,
+          sortOrderLibrary: config.sortOrderLibrary,
+          isLibraryPromoted: config.isLibraryPromoted,
+          customPoster: undefined,
+          libraryKey: config.libraryId,
+          config,
+        }
+      );
+
+      // Align separator sort title with user ordering (matching prefix, underscore to float before group)
+      try {
+        const sortTitle = this.buildSeparatorSortTitle(
+          config,
+          separatorTitle
+        );
+        await plexClient.updateCollectionSortTitle(
+          separatorRatingKey,
+          sortTitle
+        );
+      } catch (sortError) {
+        logger.debug('Failed to set separator sort title', {
+          label: 'Plex Library Collections',
+          error:
+            sortError instanceof Error ? sortError.message : String(sortError),
+        });
+      }
+
+
+      // Generate poster via pipeline using the Seperator template; fall back to static poster on failure
+      const separatorTemplateId = await this.resolveSeparatorTemplateId();
+
+      if (separatorTemplateId) {
+        try {
+          await this.generateAutoPoster(
+            separatorTitle,
+            {
+              ...config,
+              autoPoster: true,
+              autoPosterTemplate: separatorTemplateId,
+            },
+            separatorRatingKey,
+            plexClient
+          );
+        } catch (posterError) {
+          logger.warn('Failed to generate separator poster via pipeline', {
+            label: 'Plex Library Collections',
+            error:
+              posterError instanceof Error
+                ? posterError.message
+                : String(posterError),
+          });
+
+          await this.updateCollectionMetadata(
+            plexClient,
+            separatorRatingKey,
+            {
+              collectionName: separatorTitle,
+              mediaType,
+              visibilityConfig,
+              customLabel: separatorLabel,
+              sortOrderLibrary: config.sortOrderLibrary,
+              isLibraryPromoted: config.isLibraryPromoted,
+              customPoster: DEFAULT_SEPARATOR_POSTER,
+              libraryKey: config.libraryId,
+              config,
+            }
+          );
+        }
+      } else {
+        await this.updateCollectionMetadata(
+          plexClient,
+          separatorRatingKey,
+          {
+            collectionName: separatorTitle,
+            mediaType,
+            visibilityConfig,
+            customLabel: separatorLabel,
+            sortOrderLibrary: config.sortOrderLibrary,
+            isLibraryPromoted: config.isLibraryPromoted,
+            customPoster: DEFAULT_SEPARATOR_POSTER,
+            libraryKey: config.libraryId,
+            config,
+          }
+        );
+      }
+    } catch (error) {
+      logger.warn(
+        `Failed to sync separator collection for ${config.subtype}`,
+        {
+          label: 'Plex Library Collections',
+          configId: config.id,
+          libraryId: config.libraryId,
+          error: error instanceof Error ? error.message : String(error),
+        }
+      );
+    }
+  }
+
+  private async cleanupSeparatorCollection(
+    config: CollectionConfig,
+    plexClient: PlexAPI,
+    allCollections: PlexCollection[]
+  ): Promise<void> {
+    const separatorLabel = this.getSeparatorLabel(config.id).toLowerCase();
+
+    const existing = allCollections.find((collection) => {
+      if (collection.libraryKey !== config.libraryId) {
+        return false;
+      }
+
+      const labels = Array.isArray(collection.labels)
+        ? collection.labels
+        : [];
+
+      return labels.some(
+        (label: string | PlexLabel) =>
+          this.normalizeLabel(label) === separatorLabel
+      );
+    });
+
+    if (!existing) {
+      return;
+    }
+
+    try {
+      await plexClient.deleteCollection(existing.ratingKey);
+      logger.info(
+        `Removed separator collection "${existing.title}" for config ${config.id}`,
+        {
+          label: 'Plex Library Collections',
+          collectionId: existing.ratingKey,
+          libraryId: config.libraryId,
+        }
+      );
+    } catch (error) {
+      logger.warn(
+        `Failed to delete separator collection for config ${config.id}`,
+        {
+          label: 'Plex Library Collections',
+          collectionId: existing.ratingKey,
+          libraryId: config.libraryId,
+          error: error instanceof Error ? error.message : String(error),
+        }
+      );
+    }
+  }
+
   protected async validateConfiguration(): Promise<void> {
     // No external API dependencies - just needs Plex
   }
@@ -406,7 +729,7 @@ export class PlexLibraryCollectionSync extends BaseCollectionSync {
       config.subtype === 'actors' ? '{actor}' : '{director}';
 
     return {
-      source: 'plex_library',
+      source: 'plex',
       subtype: config.subtype,
       // Per-person collections use the person name as the title; expose placeholders
       director: '{director}',
@@ -475,7 +798,7 @@ export class PlexLibraryCollectionSync extends BaseCollectionSync {
     if (!subtype || (subtype !== 'directors' && subtype !== 'actors')) {
       throw this.createSyncError(
         CollectionSyncErrorType.CONFIGURATION_ERROR,
-        `Invalid plex_library subtype: ${subtype}. Currently only 'directors' and 'actors' are supported.`
+        `Invalid plex subtype: ${subtype}. Currently only 'directors' and 'actors' are supported.`
       );
     }
 
@@ -497,6 +820,18 @@ export class PlexLibraryCollectionSync extends BaseCollectionSync {
     });
 
     const personLabelPrefix = this.getPersonLabelPrefix(subtype, config.id);
+
+    if (config.useSeparator) {
+      await this.syncSeparatorCollection(
+        config,
+        plexClient,
+        allCollections,
+        mediaType,
+        processedCollectionKeys
+      );
+    } else {
+      await this.cleanupSeparatorCollection(config, plexClient, allCollections);
+    }
 
     try {
       // Fetch people from library (full list so we can respect minimum thresholds during cleanup)
@@ -641,6 +976,7 @@ export class PlexLibraryCollectionSync extends BaseCollectionSync {
               personImageUrl
             );
           }
+
         } catch (error) {
           logger.error(
             `Error creating collection for ${personTypeLabel} ${person.name}`,
