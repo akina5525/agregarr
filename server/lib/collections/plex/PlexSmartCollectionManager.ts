@@ -518,7 +518,6 @@ class PlexSmartCollectionManager {
         libraryKey,
         mediaType,
         directorName,
-        directorMinimumItems: 5,
         error: error instanceof Error ? error.message : String(error),
       });
       return null;

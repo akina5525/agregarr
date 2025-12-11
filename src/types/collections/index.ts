@@ -335,10 +335,8 @@ export interface CollectionFormConfig {
   readonly sonarrTagId?: number; // Selected Sonarr tag ID for tag-based collections
   // Generic ordering options (applicable to all collection types)
   readonly sortOrder?: CollectionSortOrder; // Sort order for collection items (default: 'default')
-  // Plex Library director settings
-  readonly directorMinimumItems?: number; // Minimum items required to create a director collection (for plex/directors)
-  // Plex Library actor settings
-  readonly actorMinimumItems?: number; // Minimum items required to create an actor collection (for plex/actors)
+  // Unified person minimum items for plex/actors|directors
+  readonly personMinimumItems?: number;
   // Plex Library separator settings for multi-collections (actors/directors)
   readonly useSeparator?: boolean; // Whether to create a separator collection for auto person collections
   readonly separatorTitle?: string; // Custom title for the separator collection
@@ -506,9 +504,8 @@ export interface CollectionConfigCreateRequest {
   readonly radarrTagId?: number;
   readonly sonarrTagId?: number;
   readonly sortOrder?: CollectionSortOrder;
-  // Plex Library director settings (also accepted by create requests)
-  readonly directorMinimumItems?: number; // Minimum items required to create a director collection (for plex/directors)
-  readonly actorMinimumItems?: number; // Minimum items required to create an actor collection (for plex/actors)
+  // Unified person minimum items for plex actors/directors
+  readonly personMinimumItems?: number;
   // Plex Library separator settings for auto person multi-collections
   readonly useSeparator?: boolean;
   readonly separatorTitle?: string;
@@ -633,13 +630,14 @@ export const toCollectionCreateRequest = (
     radarrTagId: config.radarrTagId,
     sonarrTagId: config.sonarrTagId,
     sortOrder: config.sortOrder,
-    directorMinimumItems: config.directorMinimumItems,
-    actorMinimumItems: config.actorMinimumItems,
+    personMinimumItems: config.personMinimumItems,
     excludeFromCollections: config.excludeFromCollections,
     timeRestriction: config.timeRestriction,
     customPoster: config.customPoster,
     autoPoster: config.autoPoster,
     autoPosterTemplate: config.autoPosterTemplate,
+    useSeparator: config.useSeparator,
+    separatorTitle: config.separatorTitle,
     useTmdbFranchisePoster: config.useTmdbFranchisePoster,
     hideIndividualItems: config.hideIndividualItems,
     // Wallpaper, summary, and theme settings

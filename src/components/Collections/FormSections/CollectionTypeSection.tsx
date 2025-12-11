@@ -84,39 +84,21 @@ const CollectionTypeSection = ({
 
   if (!isVisible) return null;
 
-  // Ensure director minimum items defaults to 5 when empty
+  // Ensure person minimum items defaults to 5 when empty
   useEffect(() => {
+    const isPersonConfig =
+      values.type === 'plex' && values.subtype === 'actors';
     const isDirectorConfig =
       values.type === 'plex' && values.subtype === 'directors';
-    const hasValue =
-      values.directorMinimumItems !== undefined &&
-      values.directorMinimumItems !== null;
+    const hasValue = values.personMinimumItems !== undefined;
 
-    if (isDirectorConfig && !hasValue) {
-      setFieldValue('directorMinimumItems', 5);
+    if ((isPersonConfig || isDirectorConfig) && !hasValue) {
+      setFieldValue('personMinimumItems', 5);
     }
   }, [
     values.type,
     values.subtype,
-    values.directorMinimumItems,
-    setFieldValue,
-  ]);
-
-  // Ensure actor minimum items defaults to 5 when empty
-  useEffect(() => {
-    const isActorConfig =
-      values.type === 'plex' && values.subtype === 'actors';
-    const hasValue =
-      values.actorMinimumItems !== undefined &&
-      values.actorMinimumItems !== null;
-
-    if (isActorConfig && !hasValue) {
-      setFieldValue('actorMinimumItems', 5);
-    }
-  }, [
-    values.type,
-    values.subtype,
-    values.actorMinimumItems,
+    values.personMinimumItems,
     setFieldValue,
   ]);
 
@@ -571,50 +553,31 @@ const CollectionTypeSection = ({
         />
       )}
 
-      {/* Plex Library Person Minimum Item Limit */}
+      {/* Person minimum items & separator option for auto person collections */}
       {values.type === 'plex' &&
         (values.subtype === 'directors' || values.subtype === 'actors') && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              {(() => {
-                const fieldName =
-                  values.subtype === 'actors'
-                    ? 'actorMinimumItems'
-                    : 'directorMinimumItems';
-                const label =
-                  values.subtype === 'actors' ? 'Actor' : 'Director';
-                return (
-                  <>
-                    <label
-                      htmlFor={fieldName}
-                      className="mb-2 block text-sm text-gray-300"
-                    >
-                      Minimum Items
-                    </label>
-                    <Field
-                      type="number"
-                      id={fieldName}
-                      name={fieldName}
-                      placeholder="5"
-                      min="2"
-                      max="50"
-                      className="w-full rounded-md border border-stone-500 bg-stone-700 px-3 py-2 text-white placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    />
-                    <p className="mt-1 text-xs text-gray-400">
-                      Only create if a {label.toLowerCase()} has at least this
-                      many items (default: 5, minimum allowed: 2)
-                    </p>
-                  </>
-                );
-              })()}
+              <label
+                htmlFor="personMinimumItems"
+                className="mb-2 block text-sm text-gray-300"
+              >
+                Minimum Items
+              </label>
+              <Field
+                type="number"
+                id="personMinimumItems"
+                name="personMinimumItems"
+                placeholder="5"
+                min="2"
+                max="50"
+                className="w-full rounded-md border border-stone-500 bg-stone-700 px-3 py-2 text-white placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              <p className="mt-1 text-xs text-gray-400">
+                Only create if this person has at least this many items
+                (default: 5, minimum allowed: 2)
+              </p>
             </div>
-          </div>
-        )}
-
-      {/* Separator option for auto person collections */}
-      {values.type === 'plex' &&
-        (values.subtype === 'directors' || values.subtype === 'actors') && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2 rounded-md border border-gray-500/20 bg-transparent p-4">
               <div className="flex items-center justify-between">
                 <div>

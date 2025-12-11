@@ -329,8 +329,7 @@ const CollectionSettings = ({
           showUnwatchedOnly: config.showUnwatchedOnly,
           smartCollectionSort: config.smartCollectionSort,
           // Plex Library person collections
-          directorMinimumItems: config.directorMinimumItems,
-          actorMinimumItems: config.actorMinimumItems,
+          personMinimumItems: config.personMinimumItems,
           randomizeHomeOrder: config.randomizeHomeOrder,
           customWallpaper: config.customWallpaper,
           customSummary: config.customSummary,

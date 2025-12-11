@@ -270,27 +270,23 @@ collectionsRoutes.put('/:id/settings', isAuthenticated(), async (req, res) => {
         const parsed = Number(value);
         return Number.isFinite(parsed) ? parsed : undefined;
       };
-      const minimumField =
-        req.body.subtype === 'actors'
-          ? 'actorMinimumItems'
-          : 'directorMinimumItems';
-      const coercedMinimum = maybeNumber(req.body[minimumField]);
+      const personMinimum = maybeNumber(req.body.personMinimumItems);
 
-      if (coercedMinimum === 1) {
+      if (personMinimum !== undefined && personMinimum < 2) {
         return res.status(400).json({
           error: `${req.body.subtype} minimum items must be at least 2`,
           message: 'Person collections require a minimum of 2 items, 1 is not allowed',
         });
       }
 
-      if (coercedMinimum !== undefined) {
-        req.body[minimumField] = coercedMinimum;
+      if (personMinimum !== undefined) {
+        req.body.personMinimumItems = personMinimum;
       }
 
       logger.info(`Updating plex/${req.body.subtype} config`, {
         label: 'Collections API',
         id,
-        incomingMinimumItems: req.body[minimumField],
+        incomingMinimumItems: personMinimum,
         rawBodyKeys: Object.keys(req.body || {}),
         rawBody: req.body,
       });

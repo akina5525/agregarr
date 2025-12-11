@@ -296,7 +296,7 @@ const CollectionFormConfigForm = ({
       then: (schema) => schema.required('Collection sub-type is required'),
       otherwise: (schema) => schema.notRequired(),
     }),
-    directorMinimumItems: Yup.number()
+    personMinimumItems: Yup.number()
       .transform((value, originalValue) => {
         if (
           originalValue === null ||
@@ -309,31 +309,11 @@ const CollectionFormConfigForm = ({
       })
       .when(['type', 'subtype'], {
         is: (type?: string, subtype?: string) =>
-          type === 'plex' && subtype === 'directors',
+          type === 'plex' && (subtype === 'actors' || subtype === 'directors'),
         then: (schema) =>
           schema
-            .required('Director minimum items is required')
-            .min(2, 'Director minimum items must be at least 2'),
-        otherwise: (schema) => schema.notRequired(),
-      }),
-    actorMinimumItems: Yup.number()
-      .transform((value, originalValue) => {
-        if (
-          originalValue === null ||
-          originalValue === undefined ||
-          originalValue === ''
-        ) {
-          return undefined;
-        }
-        return Number.isNaN(value) ? undefined : value;
-      })
-      .when(['type', 'subtype'], {
-        is: (type?: string, subtype?: string) =>
-          type === 'plex' && subtype === 'actors',
-        then: (schema) =>
-          schema
-            .required('Actor minimum items is required')
-            .min(2, 'Actor minimum items must be at least 2'),
+            .required('Minimum items is required')
+            .min(2, 'Minimum items must be at least 2'),
         otherwise: (schema) => schema.notRequired(),
       }),
     useSeparator: Yup.boolean(),
@@ -1105,16 +1085,11 @@ const CollectionFormConfigForm = ({
           createPlaceholdersForMissing:
             (config as CollectionFormConfig).createPlaceholdersForMissing ??
             (config as CollectionFormConfig).type === 'comingsoon', // Force true for Coming Soon
-          directorMinimumItems:
-            (config as CollectionFormConfig).directorMinimumItems ??
+          personMinimumItems:
+            (config as CollectionFormConfig).personMinimumItems ??
             ((config as CollectionFormConfig).type === 'plex' &&
-            (config as CollectionFormConfig).subtype === 'directors'
-              ? 5
-              : undefined),
-          actorMinimumItems:
-            (config as CollectionFormConfig).actorMinimumItems ??
-            ((config as CollectionFormConfig).type === 'plex' &&
-            (config as CollectionFormConfig).subtype === 'actors'
+            ((config as CollectionFormConfig).subtype === 'actors' ||
+              (config as CollectionFormConfig).subtype === 'directors')
               ? 5
               : undefined),
           useSeparator:
@@ -1569,14 +1544,12 @@ const CollectionFormConfigForm = ({
                 ? parseFloat(values.minimumRottenTomatoesRating.toString())
                 : 0
               : undefined,
-            directorMinimumItems:
-              optionalNumber(values.directorMinimumItems) ??
-              (config as CollectionFormConfig).directorMinimumItems ??
-              5,
-            actorMinimumItems:
-              optionalNumber(values.actorMinimumItems) ??
-              (config as CollectionFormConfig).actorMinimumItems ??
-              5,
+            // Unified person minimum items mapped to person collections
+            personMinimumItems: isPersonCollection
+              ? optionalNumber(values.personMinimumItems) ??
+                (config as CollectionFormConfig).personMinimumItems ??
+                5
+              : undefined,
             excludedGenres:
               values.enableGrabMissingItems && values.excludedGenres
                 ? values.excludedGenres

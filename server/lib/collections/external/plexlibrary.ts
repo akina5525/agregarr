@@ -805,10 +805,7 @@ export class PlexLibraryCollectionSync extends BaseCollectionSync {
     const personTypeLabel = this.getPersonTypeLabel(subtype);
     const depth = 50; // Top N per person type (actors/directors)
     const limit = 30; // Max items per person
-    const minimumItems =
-      subtype === 'actors'
-        ? config.actorMinimumItems ?? 5
-        : config.directorMinimumItems ?? 5; // Minimum threshold
+    const minimumItems = config.personMinimumItems ?? 5; // Minimum threshold
 
     logger.info(`Processing ${subtype} collection`, {
       label: 'Plex Library Collections',

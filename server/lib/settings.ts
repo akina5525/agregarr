@@ -177,10 +177,8 @@ export interface CollectionConfig {
   readonly sonarrInstanceId?: number; // Selected Sonarr instance ID for tag-based collections
   // Generic ordering options (applicable to all collection types)
   readonly sortOrder?: CollectionSortOrder; // Sort order for collection items (default: 'default')
-  // Plex Library director settings (for plex/directors)
-  readonly directorMinimumItems?: number; // Minimum items required to create a director collection (default: 5)
-  // Plex Library actor settings (for plex/actors)
-  readonly actorMinimumItems?: number; // Minimum items required to create an actor collection (default: 5)
+  // Unified person minimum items (applies to both actors and directors)
+  readonly personMinimumItems?: number;
   // Plex Library separator settings for auto person collections
   readonly useSeparator?: boolean; // Create a separator collection for actors/directors multi-collections
   readonly separatorTitle?: string; // Custom title for the separator collection
@@ -1413,14 +1411,20 @@ class Settings {
             updatedConfig.subtype === 'actors')
         ) {
           const isActors = updatedConfig.subtype === 'actors';
-          const minimumItemsKey = isActors
-            ? 'actorMinimumItems'
-            : 'directorMinimumItems';
+          const personMinimum = updatedConfig.personMinimumItems;
 
-          if ((updatedConfig as any)[minimumItemsKey] === undefined) {
-            (updatedConfig as any)[minimumItemsKey] = 5;
+          if (personMinimum === undefined) {
+            updatedConfig.personMinimumItems = 5;
             changed = true;
+          } else {
+            // Keep person minimum as source of truth
+            const normalizedMinimum = personMinimum;
+            if (updatedConfig.personMinimumItems !== normalizedMinimum) {
+              updatedConfig.personMinimumItems = normalizedMinimum;
+              changed = true;
+            }
           }
+
           // Standardize template/name so placeholder text doesn't leak through
           const placeholder = isActors ? '{actor}' : '{director}';
           if (

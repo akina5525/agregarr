@@ -628,14 +628,9 @@ components:
           example: 'default'
           default: 'default'
           nullable: true
-        directorMinimumItems:
+        personMinimumItems:
           type: number
-          description: 'Minimum items required to create a director collection (plex/directors)'
-          example: 3
-          nullable: true
-        actorMinimumItems:
-          type: number
-          description: 'Minimum items required to create an actor collection (plex/actors)'
+          description: 'Unified minimum items required to create actor/director collections'
           example: 3
           nullable: true
         useSeparator:
@@ -1188,14 +1183,9 @@ components:
           example: 'default'
           default: 'default'
           nullable: true
-        directorMinimumItems:
+        personMinimumItems:
           type: number
-          description: 'Minimum items required to create a director collection (plex/directors)'
-          example: 3
-          nullable: true
-        actorMinimumItems:
-          type: number
-          description: 'Minimum items required to create an actor collection (plex/actors)'
+          description: 'Unified minimum items required to create actor/director collections'
           example: 3
           nullable: true
         useSeparator:
@@ -1911,14 +1901,9 @@ components:
           example: 'default'
           default: 'default'
           nullable: true
-        directorMinimumItems:
+        personMinimumItems:
           type: number
-          description: 'Minimum items required to create a director collection (plex/directors)'
-          example: 3
-          nullable: true
-        actorMinimumItems:
-          type: number
-          description: 'Minimum items required to create an actor collection (plex/actors)'
+          description: 'Unified minimum items required to create actor/director collections'
           example: 3
           nullable: true
         useSeparator:
