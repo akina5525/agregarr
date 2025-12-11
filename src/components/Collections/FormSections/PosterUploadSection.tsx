@@ -53,7 +53,6 @@ interface PosterTemplate {
   name: string;
   description?: string;
   isDefault: boolean;
-  isPersonDefault: boolean;
 }
 
 interface PosterUploadSectionProps {
@@ -139,21 +138,10 @@ const PosterUploadSection = ({
     values.autoPoster ?? (isPreExisting ? false : true);
 
   // Get current selected template - if none selected, use the default template
-  const defaultTemplate =
-    templates?.find((t) => t.isDefault && !t.isPersonDefault) ||
-    templates?.find(
-      (t) => !t.isPersonDefault && t.name === 'Default Agregarr Template'
-    );
-  const personTemplate =
-    templates?.find((t) => t.isPersonDefault) ||
-    templates?.find((t) => t.name === 'Person Spotlight') ||
-    templates?.find((t) => t.name === 'Director Spotlight');
+  const defaultTemplate = templates?.find((t) => t.isDefault);
   const selectedTemplateId =
     values.autoPosterTemplate || defaultTemplate?.id || null;
   const selectedTemplate = templates?.find((t) => t.id === selectedTemplateId);
-  const isPersonCollection =
-    values.type === 'plex' &&
-    (values.subtype === 'directors' || values.subtype === 'actors');
 
   const handleAutoPosterChange = (enabled: boolean) => {
     setFieldValue('autoPoster', enabled);
@@ -165,31 +153,10 @@ const PosterUploadSection = ({
 
   // Auto-select default template when templates load and no template is currently selected
   useEffect(() => {
-    if (!templates) {
-      return;
-    }
-
-    if (
-      isPersonCollection &&
-      personTemplate &&
-      (!values.autoPosterTemplate ||
-        values.autoPosterTemplate === defaultTemplate?.id)
-    ) {
-      setFieldValue('autoPosterTemplate', personTemplate.id);
-      return;
-    }
-
-    if (!values.autoPosterTemplate && defaultTemplate) {
+    if (templates && !values.autoPosterTemplate && defaultTemplate) {
       setFieldValue('autoPosterTemplate', defaultTemplate.id);
     }
-  }, [
-    templates,
-    values.autoPosterTemplate,
-    defaultTemplate,
-    personTemplate,
-    isPersonCollection,
-    setFieldValue,
-  ]);
+  }, [templates, values.autoPosterTemplate, defaultTemplate, setFieldValue]);
 
   const handleRemovePoster = (libraryId: string) => {
     const updatedPosters = { ...currentPosters };

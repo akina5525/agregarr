@@ -5,13 +5,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import type {
   LayeredElement,
-  PreviewCollectionConfig,
   TextElementProps as TextProps,
 } from './PosterEditorModal';
 
 interface TextElementComponentProps {
   element: LayeredElement;
-  previewCollectionConfig?: PreviewCollectionConfig;
+  previewCollectionConfig?: {
+    name: string;
+    type?: string;
+    mediaType?: 'movie' | 'tv';
+  };
   isSelected: boolean;
   onSelect: (node: Konva.Node) => void;
   onDragMove: (node: Konva.Node) => void;
@@ -201,22 +204,6 @@ export function calculateTextLayout(
   };
 }
 
-const applyTextTransform = (
-  value: string,
-  transform: TextProps['textTransform']
-): string => {
-  switch (transform) {
-    case 'uppercase':
-      return value.toUpperCase();
-    case 'lowercase':
-      return value.toLowerCase();
-    case 'capitalize':
-      return value.replace(/\b\w/g, (char) => char.toUpperCase());
-    default:
-      return value;
-  }
-};
-
 export const TextElement: React.FC<TextElementComponentProps> = ({
   element,
   previewCollectionConfig,
@@ -242,12 +229,10 @@ export const TextElement: React.FC<TextElementComponentProps> = ({
   }, [props.fontFamily]);
 
   // Determine display text
-  const rawText =
+  const displayText =
     props.elementType === 'collection-title'
       ? previewCollectionConfig?.name || 'Collection Title'
       : props.text || 'Sample Text';
-
-  const displayText = applyTextTransform(rawText, props.textTransform);
 
   // Calculate text layout
   const textLayout = useMemo(() => {

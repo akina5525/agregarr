@@ -39,7 +39,7 @@ export type EditorMode =
 export interface LayeredElement {
   id: string;
   layerOrder: number; // 0 = bottom, higher = top
-  type: 'text' | 'raster' | 'svg' | 'content-grid' | 'person';
+  type: 'text' | 'raster' | 'svg' | 'content-grid';
 
   // Common properties
   x: number;
@@ -53,8 +53,7 @@ export interface LayeredElement {
     | TextElementProps
     | RasterElementProps
     | SVGElementProps
-    | ContentGridProps
-    | PersonElementProps;
+    | ContentGridProps;
 }
 
 export interface TextElementProps {
@@ -70,16 +69,10 @@ export interface TextElementProps {
   // Text-specific source colors for templates
   useSourceColors?: boolean;
   sourceColorType?: string;
-  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
 }
 
 export interface RasterElementProps {
   imagePath: string; // Path to uploaded raster image
-}
-
-export interface PersonElementProps extends Partial<RasterElementProps> {
-  overlayColor?: string;
-  overlayOpacity?: number;
 }
 
 export interface SVGElementProps {
@@ -117,14 +110,6 @@ export interface PosterEditorData {
   migrated: boolean; // Flag to track if template has been migrated to new system
 }
 
-export interface PreviewCollectionConfig {
-  id?: string;
-  name: string;
-  type?: string;
-  mediaType?: 'movie' | 'tv';
-  sourceName?: string;
-}
-
 export interface PosterEditorModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -132,14 +117,20 @@ export interface PosterEditorModalProps {
   initialData?: PosterEditorData;
   initialName?: string;
   initialDescription?: string;
-  previewCollectionConfig?: PreviewCollectionConfig;
+  previewCollectionConfig?: {
+    name: string;
+    type?: string;
+    mediaType?: 'movie' | 'tv';
+  };
   onSave: (data: {
     name: string;
     description?: string;
     posterData: PosterEditorData;
   }) => Promise<void>;
   setPreviewCollectionConfig?: (
-    config: PreviewCollectionConfig | undefined
+    config:
+      | { name: string; type?: string; mediaType?: 'movie' | 'tv' }
+      | undefined
   ) => void;
 }
 
@@ -154,46 +145,6 @@ const DEFAULT_POSTER_DATA: PosterEditorData = {
   },
   elements: [],
   migrated: true,
-};
-
-const PERSON_PREVIEW_NAMES: Record<'actors' | 'directors', string> = {
-  actors: 'Actor Name',
-  directors: 'Director Name',
-};
-
-const PLACEHOLDER_PATTERN = /{([^}]+)}/g;
-
-const buildPreviewCollectionName = (collection?: {
-  name?: string;
-  type?: string;
-  subtype?: string;
-}): string => {
-  const rawName = collection?.name || '';
-
-  const replacedPlaceholders = rawName.replace(
-    PLACEHOLDER_PATTERN,
-    (_match, key: string) => {
-      const normalizedKey = key.toLowerCase();
-      if (normalizedKey === 'actor') return PERSON_PREVIEW_NAMES.actors;
-      if (normalizedKey === 'director') return PERSON_PREVIEW_NAMES.directors;
-      if (normalizedKey === 'collection') return 'Sample Collection';
-      if (normalizedKey === 'name') return 'Sample Name';
-      return `Sample ${key.replace(/[_-]/g, ' ')}`.trim();
-    }
-  );
-
-  if (replacedPlaceholders !== rawName) {
-    return replacedPlaceholders;
-  }
-
-  if (
-    collection?.type === 'plex' &&
-    (collection?.subtype === 'actors' || collection?.subtype === 'directors')
-  ) {
-    return PERSON_PREVIEW_NAMES[collection.subtype];
-  }
-
-  return rawName || 'Sample Collection';
 };
 
 export const PosterEditorModal: React.FC<PosterEditorModalProps> = ({
@@ -233,25 +184,19 @@ export const PosterEditorModal: React.FC<PosterEditorModalProps> = ({
 
   // Internal preview collection state (for template/poster creation from PostersView)
   const [internalPreviewConfig, setInternalPreviewConfig] = useState<
-    PreviewCollectionConfig | undefined
+    | {
+        name: string;
+        type?: string;
+        mediaType?: 'movie' | 'tv';
+      }
+    | undefined
   >(undefined);
 
   // Use external config if provided, otherwise use internal state
-  const rawPreviewCollectionConfig =
+  const previewCollectionConfig =
     externalPreviewConfig || internalPreviewConfig;
-  const previewCollectionConfig = rawPreviewCollectionConfig
-    ? {
-        ...rawPreviewCollectionConfig,
-        name: buildPreviewCollectionName(rawPreviewCollectionConfig),
-        sourceName:
-          rawPreviewCollectionConfig.sourceName ||
-          rawPreviewCollectionConfig.name,
-      }
-    : undefined;
   const setPreviewCollectionConfig =
     externalSetPreviewConfig || setInternalPreviewConfig;
-  const [selectedPreviewCollectionId, setSelectedPreviewCollectionId] =
-    useState<string>('');
 
   // Undo/Redo functions
   const canUndo = historyIndex > 0;
@@ -340,10 +285,8 @@ export const PosterEditorModal: React.FC<PosterEditorModalProps> = ({
   // Fetch actual collection configs for preview
   const { data: collectionsData } = useSWR<{
     collectionConfigs: {
-      id?: string;
       name: string;
       type?: string;
-      subtype?: string;
       mediaType?: 'movie' | 'tv';
     }[];
   }>(isOpen ? '/api/v1/collections' : null);
@@ -378,19 +321,6 @@ export const PosterEditorModal: React.FC<PosterEditorModalProps> = ({
       setSelectedElementId(undefined);
     }
   }, [isOpen, initialData, initialName, initialDescription]);
-
-  // Keep dropdown selection in sync with preview config
-  useEffect(() => {
-    if (previewCollectionConfig) {
-      setSelectedPreviewCollectionId(
-        previewCollectionConfig.sourceName ||
-          previewCollectionConfig.id ||
-          previewCollectionConfig.name
-      );
-    } else {
-      setSelectedPreviewCollectionId('');
-    }
-  }, [previewCollectionConfig]);
 
   const handleSave = useCallback(async () => {
     if (!name.trim()) {
@@ -557,32 +487,25 @@ export const PosterEditorModal: React.FC<PosterEditorModalProps> = ({
                       <select
                         id="previewCollection"
                         className="w-full rounded-md border border-stone-600 bg-stone-800 px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none"
-                        value={selectedPreviewCollectionId}
+                        value={previewCollectionConfig?.name || ''}
                         onChange={(e) => {
-                          const selectedValue = e.target.value;
                           const collectionConfigs =
                             collectionsData?.collectionConfigs || [];
                           const selected = collectionConfigs.find(
-                            (c) =>
-                              (c.id || c.name) === selectedValue
+                            (c) => c.name === e.target.value
                           );
                           if (selected && setPreviewCollectionConfig) {
-                            const previewName =
-                              buildPreviewCollectionName(selected);
                             setPreviewCollectionConfig({
-                              id: selected.id,
-                              name: previewName,
-                              sourceName: selected.name,
+                              name: selected.name,
                               type: selected.type,
                               mediaType: selected.mediaType || 'movie',
                             });
-                            setSelectedPreviewCollectionId(
-                              selected.id || selected.name
-                            );
-                          } else if (!selectedValue && setPreviewCollectionConfig) {
+                          } else if (
+                            !e.target.value &&
+                            setPreviewCollectionConfig
+                          ) {
                             // Clear selection
                             setPreviewCollectionConfig(undefined);
-                            setSelectedPreviewCollectionId('');
                           }
                         }}
                       >
@@ -592,11 +515,10 @@ export const PosterEditorModal: React.FC<PosterEditorModalProps> = ({
                         {(collectionsData?.collectionConfigs || []).map(
                           (collection) => (
                             <option
-                              key={collection.id || collection.name}
-                              value={collection.id || collection.name}
+                              key={collection.name}
+                              value={collection.name}
                             >
-                              {buildPreviewCollectionName(collection)} (
-                              {collection.type || 'Unknown'})
+                              {collection.name} ({collection.type || 'Unknown'})
                             </option>
                           )
                         )}

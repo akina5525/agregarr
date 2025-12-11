@@ -566,12 +566,6 @@ export class CollectionSyncService {
         );
         return new FilteredHubCollectionSync();
       }
-      case 'plex': {
-        const { PlexLibraryCollectionSync } = await import(
-          '../external/plexlibrary'
-        );
-        return new PlexLibraryCollectionSync();
-      }
       case 'multi-source':
         throw new Error(
           'Multi-source collections should be handled by MultiSourceOrchestrator, not individual sync services'

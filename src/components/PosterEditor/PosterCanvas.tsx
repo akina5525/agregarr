@@ -17,7 +17,6 @@ import type {
   EditorMode,
   LayeredElement,
   PosterEditorData,
-  PreviewCollectionConfig,
 } from './PosterEditorModal';
 import { SVGElement } from './SVGElement';
 import { TextElement } from './TextElement';
@@ -140,7 +139,11 @@ export interface PosterCanvasRef {
 interface PosterCanvasProps {
   posterData: PosterEditorData;
   onChange: (data: PosterEditorData) => void;
-  previewCollectionConfig?: PreviewCollectionConfig;
+  previewCollectionConfig?: {
+    name: string;
+    type?: string;
+    mediaType?: 'movie' | 'tv';
+  };
   mode?: EditorMode;
   currentlyEditingSource?: string;
   snapToGuides?: boolean;
@@ -291,8 +294,6 @@ export const PosterCanvas = forwardRef<PosterCanvasRef, PosterCanvasProps>(
         case 'text':
           return <TextElement {...shapeProps} />;
         case 'raster':
-          return <ImageElement {...shapeProps} />;
-        case 'person':
           return <ImageElement {...shapeProps} />;
         case 'svg':
           return <SVGElement {...shapeProps} />;

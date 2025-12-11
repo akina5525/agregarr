@@ -1,14 +1,15 @@
 import { useMemo } from 'react';
 import { Rect, Text } from 'react-konva';
-import type {
-  PosterEditorData,
-  PreviewCollectionConfig,
-} from './PosterEditorModal';
+import type { PosterEditorData } from './PosterEditorModal';
 
 interface BackgroundProps {
   posterData: PosterEditorData;
   currentlyEditingSource?: string;
-  previewCollectionConfig?: PreviewCollectionConfig;
+  previewCollectionConfig?: {
+    name: string;
+    type?: string;
+    mediaType?: 'movie' | 'tv';
+  };
   sourceColorsData?: {
     sourceColors: Record<
       string,

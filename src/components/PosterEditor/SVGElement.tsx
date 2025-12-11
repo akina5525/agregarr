@@ -4,13 +4,16 @@ import { useEffect, useRef, useState } from 'react';
 import { Group, Image, Rect } from 'react-konva';
 import type {
   LayeredElement,
-  PreviewCollectionConfig,
   SVGElementProps as SVGProps,
 } from './PosterEditorModal';
 
 interface SVGElementComponentProps {
   element: LayeredElement;
-  previewCollectionConfig?: PreviewCollectionConfig;
+  previewCollectionConfig?: {
+    name: string;
+    type?: string;
+    mediaType?: 'movie' | 'tv';
+  };
   isSelected: boolean;
   onSelect: (node: Konva.Node) => void;
   onDragMove: (node: Konva.Node) => void;
@@ -37,16 +40,11 @@ export const SVGElement: React.FC<SVGElementComponentProps> = ({
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const groupRef = useRef<Konva.Group | null>(null);
 
-  const normalizedType =
-    previewCollectionConfig?.type === 'plex_library'
-      ? 'plex'
-      : previewCollectionConfig?.type;
-
-  // Determine SVG path (normalize legacy plex_library to plex icon)
+  // Determine SVG path
   const svgPath =
     props.iconType === 'source-logo'
-      ? normalizedType
-        ? `/services/${normalizedType}.svg`
+      ? previewCollectionConfig?.type
+        ? `/services/${previewCollectionConfig.type}.svg`
         : '/services/os_icon.svg' // Agregarr logo as placeholder
       : props.iconPath || '';
 
