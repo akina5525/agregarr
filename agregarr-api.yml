@@ -248,6 +248,7 @@ components:
               'letterboxd',
               'networks',
               'originals',
+              'plex_library',
               'multi-source',
               'anilist',
               'myanimelist',
@@ -627,6 +628,16 @@ components:
           example: 'default'
           default: 'default'
           nullable: true
+        directorMinimumItems:
+          type: number
+          description: 'Minimum items required to create a director collection (plex_library/directors)'
+          example: 3
+          nullable: true
+        actorMinimumItems:
+          type: number
+          description: 'Minimum items required to create an actor collection (plex_library/actors)'
+          example: 3
+          nullable: true
         excludeFromCollections:
           type: array
           items:
@@ -805,6 +816,7 @@ components:
               'letterboxd',
               'networks',
               'originals',
+              'plex_library',
               'multi-source',
               'anilist',
               'myanimelist',
@@ -1166,6 +1178,16 @@ components:
           example: 'default'
           default: 'default'
           nullable: true
+        directorMinimumItems:
+          type: number
+          description: 'Minimum items required to create a director collection (plex_library/directors)'
+          example: 3
+          nullable: true
+        actorMinimumItems:
+          type: number
+          description: 'Minimum items required to create an actor collection (plex_library/actors)'
+          example: 3
+          nullable: true
         excludeFromCollections:
           type: array
           items:
@@ -1485,6 +1507,7 @@ components:
               'letterboxd',
               'networks',
               'originals',
+              'plex_library',
               'multi-source',
               'anilist',
               'myanimelist',
@@ -1868,6 +1891,16 @@ components:
           example: 'default'
           default: 'default'
           nullable: true
+        directorMinimumItems:
+          type: number
+          description: 'Minimum items required to create a director collection (plex_library/directors)'
+          example: 3
+          nullable: true
+        actorMinimumItems:
+          type: number
+          description: 'Minimum items required to create an actor collection (plex_library/actors)'
+          example: 3
+          nullable: true
         excludeFromCollections:
           type: array
           items:
@@ -2197,6 +2230,7 @@ components:
               'overseerr',
               'networks',
               'originals',
+              'plex_library',
               'anilist',
               'myanimelist',
               'radarrtag',
@@ -6513,6 +6547,7 @@ paths:
                       sonarrtag,
                       comingsoon,
                       filtered_hub,
+                      plex_library,
                       multi-source,
                     ]
                   example: imdb
