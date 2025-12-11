@@ -5,16 +5,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import type {
   LayeredElement,
+  PreviewCollectionConfig,
   TextElementProps as TextProps,
 } from './PosterEditorModal';
 
 interface TextElementComponentProps {
   element: LayeredElement;
-  previewCollectionConfig?: {
-    name: string;
-    type?: string;
-    mediaType?: 'movie' | 'tv';
-  };
+  previewCollectionConfig?: PreviewCollectionConfig;
   isSelected: boolean;
   onSelect: (node: Konva.Node) => void;
   onDragMove: (node: Konva.Node) => void;

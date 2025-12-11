@@ -480,7 +480,7 @@ export class PlexLibraryCollectionSync extends BaseCollectionSync {
     }
 
     const personTypeLabel = this.getPersonTypeLabel(subtype);
-    const depth = subtype === 'actors' ? 5 : 50; // Top N per person type
+    const depth = 50; // Top N per person type (actors/directors)
     const limit = 30; // Max items per person
     const minimumItems =
       subtype === 'actors'
@@ -499,20 +499,17 @@ export class PlexLibraryCollectionSync extends BaseCollectionSync {
     const personLabelPrefix = this.getPersonLabelPrefix(subtype, config.id);
 
     try {
-      // Fetch top people from library
+      // Fetch people from library (full list so we can respect minimum thresholds during cleanup)
       const people =
         subtype === 'actors'
-          ? await plexClient.getLibraryActors(
-              config.libraryId,
-              depth * 2 // Fetch extra in case some don't meet minimum threshold
-            )
-          : await plexClient.getLibraryDirectors(
-              config.libraryId,
-              depth * 2 // Fetch extra in case some don't meet minimum threshold
-            );
+          ? await plexClient.getLibraryActors(config.libraryId)
+          : await plexClient.getLibraryDirectors(config.libraryId);
 
       // Filter people by minimum items threshold
       const qualifyingPeople = people.filter((person) => person.count >= minimumItems);
+      const qualifyingPersonNames = new Set(
+        qualifyingPeople.map((person) => person.name.toLowerCase())
+      );
 
       // Limit to depth
       const topPeople = qualifyingPeople.slice(0, depth);
@@ -657,10 +654,7 @@ export class PlexLibraryCollectionSync extends BaseCollectionSync {
         }
       }
 
-      // Remove any previously created collections that are now outside the depth limit
-      const topPersonNames = new Set(
-        topPeople.map((person) => person.name.toLowerCase())
-      );
+      // Remove any previously created collections that no longer meet the threshold
       const managedCollections = allCollections.filter((collection) => {
         if (collection.libraryKey !== config.libraryId) {
           return false;
@@ -677,7 +671,9 @@ export class PlexLibraryCollectionSync extends BaseCollectionSync {
       });
 
       for (const collection of managedCollections) {
-        if (topPersonNames.has(collection.title.toLowerCase())) {
+        const normalizedTitle = collection.title.toLowerCase();
+
+        if (qualifyingPersonNames.has(normalizedTitle)) {
           continue;
         }
 
@@ -685,12 +681,13 @@ export class PlexLibraryCollectionSync extends BaseCollectionSync {
           await plexClient.deleteCollection(collection.ratingKey);
           deleted++;
           logger.info(
-            `Removed ${personTypeLabel} collection outside current limit: ${collection.title}`,
+            `Removed ${personTypeLabel} collection below minimum item threshold: ${collection.title}`,
             {
               label: 'Plex Library Collections',
               collectionName: collection.title,
               ratingKey: collection.ratingKey,
               libraryId: config.libraryId,
+              minimumItems,
             }
           );
         } catch (deleteError) {

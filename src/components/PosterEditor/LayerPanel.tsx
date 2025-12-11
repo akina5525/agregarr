@@ -19,6 +19,7 @@ import type {
   ContentGridProps,
   LayeredElement,
   PosterEditorData,
+  PersonElementProps,
   RasterElementProps,
   SVGElementProps,
   TextElementProps,
@@ -73,6 +74,7 @@ const messages = defineMessages({
   rows: 'Rows',
   spacing: 'Spacing',
   cornerRadius: 'Corner Radius',
+  opacity: 'Opacity',
   // Background properties
   background: 'Background',
   backgroundType: 'Type',
@@ -300,6 +302,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
         | RasterElementProps
         | SVGElementProps
         | ContentGridProps
+        | PersonElementProps
       >
     ) => {
       const elementIndex = elements.findIndex((el) => el.id === elementId);
@@ -1825,6 +1828,62 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
                         className="w-full"
                       />
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedElement.type === 'person' && (
+                <div className="space-y-2">
+                  <div>
+                    <label className="mb-1 block text-xs text-stone-400">
+                      {intl.formatMessage(messages.opacity)} (
+                      {localSliderValues[`personOpacity-${selectedElement.id}`] ??
+                        Math.round(
+                          ((selectedElement.properties as PersonElementProps)
+                            .overlayOpacity ?? 1) * 100
+                        )}
+                      %)
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={
+                        localSliderValues[`personOpacity-${selectedElement.id}`] ??
+                        Math.round(
+                          ((selectedElement.properties as PersonElementProps)
+                            .overlayOpacity ?? 1) * 100
+                        )
+                      }
+                      onInput={(e) => {
+                        const percent = Number(
+                          (e.target as HTMLInputElement).value
+                        );
+                        setLocalSliderValues((prev) => ({
+                          ...prev,
+                          [`personOpacity-${selectedElement.id}`]: percent,
+                        }));
+                        updateElementProperties(selectedElement.id, {
+                          overlayOpacity: percent / 100,
+                        });
+                      }}
+                      onChange={(e) => {
+                        const percent = Number(
+                          (e.target as HTMLInputElement).value
+                        );
+                        updateElementProperties(selectedElement.id, {
+                          overlayOpacity: percent / 100,
+                        });
+                        setLocalSliderValues((prev) => {
+                          const newState = { ...prev };
+                          delete newState[
+                            `personOpacity-${selectedElement.id}`
+                          ];
+                          return newState;
+                        });
+                      }}
+                      className="w-full"
+                    />
                   </div>
                 </div>
               )}

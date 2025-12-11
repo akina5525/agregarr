@@ -109,14 +109,14 @@ async function seedDefaultTemplate() {
           type: 'person',
           x: 0,
           y: 0,
-          width: 1000,
-          height: 1500,
-          properties: {
-            imagePath: '',
-            overlayColor: 'rgba(24,23,27,0.55)', // Subtle charcoal tint similar to reference
-            overlayOpacity: 0.4,
-          } as PersonElementProps,
-        },
+        width: 1000,
+        height: 1500,
+        properties: {
+          imagePath: '',
+          overlayColor: 'rgba(24,23,27,0.55)', // Subtle charcoal tint similar to reference
+          overlayOpacity: 0.85,
+        } as PersonElementProps,
+      },
         {
           id: 'person-tagline',
           layerOrder: 8,
@@ -149,19 +149,6 @@ async function seedDefaultTemplate() {
           properties: {
             iconType: 'custom-icon',
             iconPath: '/api/v1/posters/icons/system/person-spotlight-line.svg',
-            grayscale: false,
-          } as SVGElementProps,
-        },
-        {
-          id: 'person-logo',
-          layerOrder: 10,
-          type: 'svg',
-          x: 860,
-          y: 86,
-          width: 64,
-          height: 64,
-          properties: {
-            iconType: 'source-logo',
             grayscale: false,
           } as SVGElementProps,
         },
