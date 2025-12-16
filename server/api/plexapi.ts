@@ -35,6 +35,7 @@ export interface PlexLibraryItem {
   }[];
   type: 'movie' | 'show' | 'season' | 'episode';
   Media: Media[];
+  Director?: { tag: string }[];
 }
 
 interface PlexLibraryResponse {
@@ -79,6 +80,7 @@ export interface PlexMetadata {
   lastViewedAt?: number;
   viewCount?: number;
   Media: Media[];
+  Director?: { tag: string }[];
 }
 
 interface PlexStream {
@@ -142,6 +144,7 @@ export interface PlexCollectionItem {
   ratingKey: string;
   title: string;
   addedAt?: number;
+  Director?: { tag: string }[];
   [key: string]: unknown;
 }
 

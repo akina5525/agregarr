@@ -4,13 +4,16 @@ import { BaseCollectionSync } from '@server/lib/collections/core/BaseCollectionS
 import {
   findPlexItemsByTmdbIds,
   processMissingItemsWithMode,
+  getCollectionMediaType,
   type LibraryItemsCache,
 } from '@server/lib/collections/core/CollectionUtilities';
 import type {
   AwardsSourceData,
   AwardsTemplateContext,
   CollectionItem,
+  CollectionSourceData,
   CollectionSyncOptions,
+  CollectionOperationResult,
   FilteringStats,
   MissingItem,
   PlexCollection,
@@ -24,17 +27,187 @@ import YAML from 'yamljs';
 
 interface AwardsCollectionItem extends CollectionItem {
   tmdbId: number;
+  director?: string;
+  awardYear?: number;
 }
 
 /**
  * Awards Collection Sync
  *
- * Fetches Academy Awards Best Picture winners from Kometa's IMDb Awards lists.
+ * Fetches awards winners from Kometa's IMDb Awards lists.
  */
 export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
   private tmdbClient: TmdbAPI;
-  private static readonly AWARDS_URL =
-    'https://raw.githubusercontent.com/Kometa-Team/IMDb-Awards/refs/heads/master/events/ev0000003.yml';
+  private static readonly BASE_AWARDS_URL =
+    'https://raw.githubusercontent.com/Kometa-Team/IMDb-Awards/refs/heads/master/events/';
+
+  private static readonly AWARD_EVENTS: Record<
+    string,
+    { id: string; name: string; categories: string[] }
+  > = {
+    academy_awards_best_picture: {
+      id: 'ev0000003',
+      name: 'Academy Awards Best Picture',
+      categories: ['best motion picture of the year', 'best picture'],
+    },
+    academy_awards_best_director: {
+      id: 'ev0000003',
+      name: 'Academy Awards Best Director',
+      categories: ['best achievement in directing', 'best director'],
+    },
+    cannes_palme_dor: {
+      id: 'ev0000147',
+      name: "Cannes Palme D'or",
+      categories: ["palme d'or"],
+    },
+    berlin_golden_bear: {
+      id: 'ev0000091',
+      name: 'Berlin Golden Bear',
+      categories: ['golden bear'],
+    },
+    bafta_best_film: {
+      id: 'ev0000123',
+      name: 'BAFTA Best Film',
+      categories: ['best film'],
+    },
+    critics_choice_best_picture: {
+      id: 'ev0000133',
+      name: 'Critics Choice Best Picture',
+      categories: ['best picture'],
+    },
+    cesar_best_film: {
+      id: 'ev0000157',
+      name: 'César Awards Best Film',
+      categories: ['best film', 'meilleur film'],
+    },
+    emmy_outstanding_drama: {
+      id: 'ev0000223',
+      name: 'Primetime Emmy Outstanding Drama',
+      categories: ['outstanding drama series'],
+    },
+    filmfare_best_film: {
+      id: 'ev0000245',
+      name: 'Filmfare Awards Best Film',
+      categories: ['best film'],
+    },
+    german_film_award_best_feature: {
+      id: 'ev0000280',
+      name: 'German Film Awards Best Feature',
+      categories: ['best feature film', 'bester spielfilm'],
+    },
+    golden_globes_best_motion_picture: {
+      id: 'ev0000292',
+      name: 'Golden Globes Best Motion Picture',
+      categories: [
+        'best motion picture - drama',
+        'best motion picture - musical or comedy',
+      ],
+    },
+    independent_spirit_best_feature: {
+      id: 'ev0000349',
+      name: 'Independent Spirit Best Feature',
+      categories: ['best feature'],
+    },
+    iifa_best_picture: {
+      id: 'ev0000361',
+      name: 'IIFA Best Picture',
+      categories: ['best picture', 'best film'],
+    },
+    zee_cine_best_film: {
+      id: 'ev0000415',
+      name: 'Zee Cine Awards Best Film',
+      categories: ['best film'],
+    },
+    national_film_awards_india_best_feature: {
+      id: 'ev0000467',
+      name: 'National Film Awards India Best Feature',
+      categories: ['best feature film'],
+    },
+    national_film_preservation_board_usa: {
+      id: 'ev0000468',
+      name: 'National Film Registry',
+      categories: ['national film registry'],
+    },
+    peoples_choice_favorite_movie: {
+      id: 'ev0000530',
+      name: "People's Choice Favorite Movie",
+      categories: ['favorite movie'],
+    },
+    razzie_worst_picture: {
+      id: 'ev0000558',
+      name: 'Razzie Worst Picture',
+      categories: ['worst picture'],
+    },
+    screen_actors_guild_outstanding_cast: {
+      id: 'ev0000598',
+      name: 'SAG Awards Outstanding Cast',
+      categories: ['outstanding performance by a cast in a motion picture'],
+    },
+    sundance_grand_jury_prize: {
+      id: 'ev0000631',
+      name: 'Sundance Grand Jury Prize',
+      categories: [
+        'grand jury prize',
+        'grand jury prize: dramatic',
+        'u.s. dramatic',
+      ],
+    },
+    tiff_peoples_choice: {
+      id: 'ev0000659',
+      name: "TIFF People's Choice",
+      categories: ["people's choice award"],
+    },
+    venice_golden_lion: {
+      id: 'ev0000681',
+      name: 'Venice Golden Lion',
+      categories: ['golden lion'],
+    },
+    indian_television_academy_best_show: {
+      id: 'ev0001931',
+      name: 'ITA Best Show',
+      categories: ['best show', 'best serial'],
+    },
+    zee_rishtey_best_show: {
+      id: 'ev0005699',
+      name: 'Zee Rishtey Best Show',
+      categories: ['favorite show', 'best show'],
+    },
+    nickelodeon_kids_choice_india_favorite_film: {
+      id: 'ev0005770',
+      name: "Nickelodeon Kids' Choice India Favorite Film",
+      categories: ['favorite film', 'favorite movie'],
+    },
+    indian_film_festival_melbourne_best_film: {
+      id: 'ev0011808',
+      name: 'IFFM Best Film',
+      categories: ['best film'],
+    },
+    filmfare_ott_best_series: {
+      id: 'ev0035513',
+      name: 'Filmfare OTT Best Series',
+      categories: ['best series', 'best original series'],
+    },
+    critics_choice_india_best_series: {
+      id: 'ev0036701',
+      name: 'Critics Choice India Best Series',
+      categories: ['best series'],
+    },
+    iconic_gold_best_film: {
+      id: 'ev0057191',
+      name: 'Iconic Gold Best Film',
+      categories: ['best film'],
+    },
+    bollywood_film_journalist_best_film: {
+      id: 'ev0060658',
+      name: 'Bollywood Film Journalist Best Film',
+      categories: ['best film'],
+    },
+    international_iconic_best_film: {
+      id: 'ev0073358',
+      name: 'International Iconic Best Film',
+      categories: ['best film'],
+    },
+  };
 
   constructor() {
     super('awards');
@@ -54,17 +227,15 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
   }
 
   private isValidAwardsSubtype(subtype?: string): boolean {
-    return subtype === 'academy_awards_best_picture_winners';
+    return !!subtype && subtype in AwardsCollectionSync.AWARD_EVENTS;
   }
 
   private getAwardsUrl(subtype?: string): string {
-    const subtypeUrlMap: Record<string, string> = {
-      academy_awards_best_picture_winners: AwardsCollectionSync.AWARDS_URL,
-    };
-
-    return subtype
-      ? subtypeUrlMap[subtype] ?? AwardsCollectionSync.AWARDS_URL
-      : AwardsCollectionSync.AWARDS_URL;
+    if (!subtype || !AwardsCollectionSync.AWARD_EVENTS[subtype]) {
+      return `${AwardsCollectionSync.BASE_AWARDS_URL}ev0000003.yml`;
+    }
+    const eventId = AwardsCollectionSync.AWARD_EVENTS[subtype].id;
+    return `${AwardsCollectionSync.BASE_AWARDS_URL}${eventId}.yml`;
   }
 
   protected async processConfiguration(
@@ -145,15 +316,35 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
         return { created: 0, updated: 0 };
       }
 
-      return await this.processWithMediaTypeStrategy(
-        finalItems,
-        config,
-        plexClient,
-        allCollections,
-        processedCollectionKeys,
-        undefined,
-        libraryCache
-      );
+    const mediaType = getCollectionMediaType(config);
+
+    // Note: applyCollectionExclusions is private in BaseCollectionSync, skipping for Awards.
+    // If exclusions are critical, we might need to expose it or reimplement.
+    const filteredItems = finalItems;
+
+    const collectionName = config.template || config.name;
+
+    const result = await this.createCollection(
+      filteredItems,
+      mediaType,
+      collectionName,
+      plexClient,
+      allCollections,
+      config,
+      processedCollectionKeys,
+      // Pass original missingItems (not placeholders) to createCollection
+      missingItems || []
+    );
+
+    return {
+      created: result.created,
+      updated: result.updated,
+      details: {
+        itemCount: result.itemCount,
+        collectionKeys: result.collectionRatingKey ? [result.collectionRatingKey] : [],
+      },
+      error: result.error,
+    };
     } catch (error) {
       logger.error(
         `Failed to process Awards collection ${config.name}: ${
@@ -179,9 +370,14 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
     config: CollectionConfig,
     mediaType: 'movie' | 'tv'
   ): Promise<AwardsTemplateContext> {
+    const configDisplayName =
+      config.subtype && AwardsCollectionSync.AWARD_EVENTS[config.subtype]
+        ? AwardsCollectionSync.AWARD_EVENTS[config.subtype].name
+        : 'Awards Collection';
+
     return this.templateEngine.createAwardsContext(
       mediaType,
-      config.subtype || 'Academy Awards'
+      configDisplayName
     ) as AwardsTemplateContext;
   }
 
@@ -216,41 +412,20 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
         const yearData = awardsData[yearKey];
         if (!yearData || typeof yearData !== 'object') continue;
 
-        const categoryContainers = [
-          yearData.oscar,
-          yearData, // fallback in case categories are nested directly
-        ].filter((c) => c && typeof c === 'object');
+        const targetCategories = this.getTargetCategories(config.subtype);
+        const yearWinnerIds = this.findWinnersRecursively(
+          yearData,
+          targetCategories
+        );
 
-        for (const container of categoryContainers) {
-          for (const [categoryName, categoryData] of Object.entries(
-            container
-          )) {
-            if (
-              categoryName.toLowerCase() !== 'best motion picture of the year'
-            ) {
-              continue;
-            }
-
-            const winnerField = (categoryData as { winner?: unknown }).winner;
-            const winnerIds: unknown[] = Array.isArray(winnerField)
-              ? winnerField
-              : winnerField
-              ? [winnerField]
-              : [];
-
-            for (const rawId of winnerIds) {
-              if (typeof rawId !== 'string') continue;
-              const imdbId = rawId.trim();
-              if (!imdbId || seen.has(imdbId)) continue;
-
-              seen.add(imdbId);
-              const numericYear = Number.parseInt(yearKey, 10);
-              winners.push({
-                imdbId,
-                year: Number.isNaN(numericYear) ? undefined : numericYear,
-              });
-            }
-          }
+        for (const imdbId of yearWinnerIds) {
+          if (!imdbId || seen.has(imdbId)) continue;
+          seen.add(imdbId);
+          const numericYear = Number.parseInt(yearKey, 10);
+          winners.push({
+            imdbId,
+            year: Number.isNaN(numericYear) ? undefined : numericYear,
+          });
         }
       }
 
@@ -261,7 +436,7 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
         );
       }
 
-      logger.info(`Found ${winners.length} Best Picture winners`, {
+      logger.info(`Found ${winners.length} winners`, {
         label: 'Awards Collections',
         configName: config.name,
       });
@@ -282,6 +457,7 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
                 tmdbId: resolved.tmdbId,
                 title: resolved.title,
                 year: resolved.year ?? winner.year,
+                awardYear: winner.year,
                 type: 'movie' as const,
                 originalPosition,
               };
@@ -312,9 +488,59 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
         CollectionSyncErrorType.API_ERROR,
         'Failed to fetch awards data',
         undefined,
-        error instanceof Error ? error : new Error(String(error))
+    error instanceof Error ? error : new Error(String(error))
       );
     }
+  }
+
+  protected getTargetCategories(subtype?: string): string[] {
+    if (subtype && AwardsCollectionSync.AWARD_EVENTS[subtype]) {
+      return AwardsCollectionSync.AWARD_EVENTS[subtype].categories;
+    }
+    // Default fallback
+    return ['best motion picture of the year', 'best picture'];
+  }
+
+  private findWinnersRecursively(
+    data: unknown,
+    targetCategories: string[]
+  ): string[] {
+    const winners: string[] = [];
+
+    if (!data || typeof data !== 'object') {
+      return winners;
+    }
+
+    for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+      if (!value || typeof value !== 'object') continue;
+
+      const normalizedKey = key.toLowerCase().replace(':', '');
+      const isTargetCategory = targetCategories.includes(normalizedKey);
+      const hasWinner = 'winner' in value;
+
+      // If this node is a target category AND contains a winner, extract it
+      if (isTargetCategory && hasWinner) {
+        const winnerField = (value as { winner?: unknown }).winner;
+        const winnerIds = Array.isArray(winnerField)
+          ? winnerField
+          : winnerField
+          ? [winnerField]
+          : [];
+
+        for (const id of winnerIds) {
+          if (typeof id === 'string') {
+            winners.push(id.trim());
+          }
+        }
+      }
+
+      // Always recurse to find nested categories (e.g., inside 'oscar' or split 'palme d'or' groups)
+      // Exception: If we just found a winner in this node, and we don't expect nested categories *inside* a category,
+      // we could skip. But purely safe to just recurse.
+      winners.push(...this.findWinnersRecursively(value, targetCategories));
+    }
+
+    return winners;
   }
 
   private async resolveTmdbId(
@@ -351,7 +577,7 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
   }
 
   public async mapSourceDataToItems(
-    sourceData: AwardsSourceData[],
+    _sourceData: CollectionSourceData[],
     config: CollectionConfig,
     plexClient?: PlexAPI,
     libraryCache?: LibraryItemsCache
@@ -360,6 +586,7 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
     missingItems?: MissingItem[];
     stats?: FilteringStats;
   }> {
+    const sourceData = _sourceData as AwardsSourceData[];
     const mappedItems: AwardsCollectionItem[] = [];
     const missingItems: MissingItem[] = [];
     const tmdbLookups: {
@@ -367,6 +594,7 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
       imdbId: string;
       title: string;
       year?: number;
+      awardYear?: number;
       originalPosition: number;
       mediaType: 'movie';
     }[] = [];
@@ -384,6 +612,7 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
         imdbId: item.imdbId,
         title: item.title || item.imdbId,
         year: item.year,
+        awardYear: item.awardYear,
         originalPosition: item.originalPosition ?? index + 1,
         mediaType: 'movie',
       });
@@ -439,6 +668,7 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
           tmdbId: lookup.tmdbId,
           imdbId: lookup.imdbId,
           year: lookup.year,
+          awardYear: lookup.awardYear,
           metadata: {
             libraryKey: plexItem.libraryKey,
           },
@@ -449,6 +679,7 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
           mediaType: 'movie',
           title: lookup.title,
           year: lookup.year,
+          awardYear: lookup.awardYear,
           originalPosition: lookup.originalPosition,
           source: 'awards',
         });
@@ -488,17 +719,160 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
     plexClient: PlexAPI,
     allCollections: PlexCollection[],
     config: CollectionConfig,
-    processedCollectionKeys?: Set<string>
-  ) {
+    processedCollectionKeys?: Set<string>,
+    missingItems: MissingItem[] = []
+  ): Promise<CollectionOperationResult> {
+    logger.info(`Starting createCollection for ${collectionName}`, {
+      label: 'Awards Collections',
+      itemCount: items.length,
+      missingItemCount: missingItems.length,
+      hasCustomSummary: !!config.customSummary,
+      customSummaryValue: config.customSummary ? `'${config.customSummary}'` : 'undefined',
+      mediaType,
+    });
+
+    // Generate dynamic summary if no custom summary is provided (or if it's empty/whitespace)
+    let collectionConfig = { ...config };
+    let dynamicSummaryString: string | undefined;
+
+    const shouldGenerateSummary =
+      !config.enableCustomSummary ||
+      !config.customSummary ||
+      config.customSummary.trim() === '';
+
+    if (shouldGenerateSummary && (items.length > 0 || missingItems.length > 0)) {
+      try {
+        const ratingKeys = items
+          .map((i) => i.ratingKey)
+          .filter((k): k is string => !!k);
+
+        logger.info(
+          `Generating dynamic summary for awards collection: ${ratingKeys.length} items`,
+          {
+            label: 'Awards Collections',
+            collectionName,
+          }
+        );
+
+        let itemsForSummary = items;
+        if (ratingKeys.length > 0) {
+          try {
+            const plexItems = await plexClient.getItemsByRatingKeys(ratingKeys);
+
+            if (plexItems && plexItems.length > 0) {
+               // Map director info to items
+               itemsForSummary = items.map((item) => {
+                const plexItem = plexItems.find(
+                  (p) => p.ratingKey === item.ratingKey
+                );
+                const director = plexItem?.Director?.[0]?.tag;
+                return {
+                  ...item,
+                  director: (item as AwardsCollectionItem).director || director,
+                } as AwardsCollectionItem;
+              });
+            } else {
+               logger.warn('Plex returned no items for metadata fetch, using basic summary', {
+                 label: 'Awards Collections',
+                 ratingKeysCount: ratingKeys.length,
+               });
+            }
+          } catch (err) {
+            logger.error('Failed to fetch Plex metadata for summary, using basic summary', {
+               label: 'Awards Collections',
+               error: err instanceof Error ? err.message : String(err),
+            });
+          }
+        }
+
+        // Generate summary
+        // Combine matched items and missing items for the summary
+        const allItemsForSummary = [
+          ...(itemsForSummary as (AwardsCollectionItem & { ratingKey?: string })[]),
+          ...missingItems.map(i => ({
+             ...i,
+             director: undefined as string | undefined,
+             ratingKey: undefined as string | undefined
+          }))
+        ];
+
+        const summaryLines = allItemsForSummary
+          .filter((i) => (i.awardYear || i.year) && i.title)
+          .sort((a, b) => ((b.awardYear || b.year || 0) - (a.awardYear || a.year || 0)))
+          .map((i) => {
+             const year = i.awardYear || i.year;
+             // Check if it's a MissingItem (doesn't have a ratingKey)
+             const isMissing = !i.ratingKey;
+
+             const directorPart = !isMissing && i.director
+                ? ` (${i.director})`
+                : isMissing
+                  ? ' (missing)'
+                  : '';
+
+             // Wrap title in asterisks for missing items (markdown italic)
+             const titlePart = isMissing ? `*${i.title}*` : i.title;
+
+             // Plain text year
+             const yearPart = `${year}:`;
+
+             return `${yearPart} ${titlePart}${directorPart}`;
+          });
+
+        // Limit summary length to avoid API errors (safe limit ~2000 chars)
+        let dynamicSummary = summaryLines.join(', ');
+        if (dynamicSummary.length > 2000) {
+           dynamicSummary = dynamicSummary.substring(0, 1997) + '...';
+           logger.warn('Dynamic summary truncated due to length', {
+             label: 'Awards Collections',
+             originalLength: summaryLines.join(', ').length,
+           });
+        }
+          logger.info(`Generated dynamic summary length: ${dynamicSummary.length}`, {
+            label: 'Awards Collections',
+            summaryPreview: dynamicSummary.substring(0, 100),
+          });
+
+          dynamicSummaryString = dynamicSummary;
+
+          // Enable custom summary to ensure it syncs (via BaseCollectionSync if working)
+          collectionConfig = {
+            ...config,
+            customSummary: dynamicSummary,
+            enableCustomSummary: true,
+          };
+      } catch (e) {
+        logger.warn('Failed to generate dynamic summary for awards collection', {
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+
     const result = await this.createOrUpdateCollectionStandardized(
       items,
       collectionName,
       mediaType,
-      config,
+      collectionConfig,
       plexClient,
       allCollections,
       processedCollectionKeys
     );
+
+    // Force update summary if we generated one, to ensure it applies
+    if (dynamicSummaryString && result.collectionRatingKey) {
+      try {
+        await plexClient.updateSummary(result.collectionRatingKey, dynamicSummaryString);
+        logger.info(`Forced update of dynamic summary for ${collectionName}`, {
+          label: 'Awards Collections',
+          collectionRatingKey: result.collectionRatingKey,
+        });
+      } catch (error) {
+         logger.warn(`Failed to force update summary for ${collectionName}`, {
+            label: 'Awards Collections',
+            error: error instanceof Error ? error.message : String(error),
+         });
+      }
+    }
 
     this.updateConfigWithRatingKey(config, result.collectionRatingKey);
 
@@ -506,7 +880,7 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
       created: result.created,
       updated: result.updated,
       collectionRatingKey: result.collectionRatingKey,
-      itemCount: result.itemCount || items.length,
+      itemCount: result.itemCount,
       stats: result.stats,
     };
   }

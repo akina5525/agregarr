@@ -266,10 +266,179 @@ const CollectionTypeSection = ({
       case 'awards':
         return [
           {
-            value: 'academy_awards_best_picture_winners',
-            label: 'Academy Awards Best Picture Winners',
+            value: 'academy_awards_best_picture',
+            label: 'Academy Awards Best Picture',
             description:
               'Winners of the Academy Award for Best Motion Picture of the Year',
+          },
+          {
+            value: 'academy_awards_best_director',
+            label: 'Academy Awards Best Director',
+            description: 'Winners of the Academy Award for Best Director',
+          },
+          {
+            value: 'cannes_palme_dor',
+            label: "Cannes Palme D'or",
+            description: "Winners of the Palme d'Or at the Cannes Film Festival",
+          },
+          {
+            value: 'berlin_golden_bear',
+            label: 'Berlin Golden Bear',
+            description:
+              'Winners of the Golden Bear for Best Film at the Berlin International Film Festival',
+          },
+          {
+            value: 'bafta_best_film',
+            label: 'BAFTA Best Film',
+            description: 'Winners of the BAFTA Award for Best Film',
+          },
+          {
+            value: 'critics_choice_best_picture',
+            label: 'Critics Choice Best Picture',
+            description: 'Winners of the Critics Choice Award for Best Picture',
+          },
+          {
+            value: 'cesar_best_film',
+            label: 'César Awards Best Film',
+            description: 'Winners of the César Award for Best Film',
+          },
+          {
+            value: 'emmy_outstanding_drama',
+            label: 'Primetime Emmy Outstanding Drama',
+            description:
+              'Winners of the Primetime Emmy Award for Outstanding Drama Series',
+          },
+          {
+            value: 'filmfare_best_film',
+            label: 'Filmfare Awards Best Film',
+            description: 'Winners of the Filmfare Award for Best Film',
+          },
+          {
+            value: 'german_film_award_best_feature',
+            label: 'German Film Awards Best Feature',
+            description:
+              'Winners of the Golden Lola for Best Feature Film at the German Film Awards',
+          },
+          {
+            value: 'golden_globes_best_motion_picture',
+            label: 'Golden Globes Best Motion Picture',
+            description:
+              'Winners of the Golden Globe for Best Motion Picture (Drama & Musical/Comedy)',
+          },
+          {
+            value: 'independent_spirit_best_feature',
+            label: 'Independent Spirit Best Feature',
+            description:
+              'Winners of the Independent Spirit Award for Best Feature',
+          },
+          {
+            value: 'iifa_best_picture',
+            label: 'IIFA Best Picture',
+            description:
+              'Winners of the IIFA Award for Best Picture (International Indian Film Academy)',
+          },
+          {
+            value: 'zee_cine_best_film',
+            label: 'Zee Cine Awards Best Film',
+            description: "Winners of the Zee Cine Award for Best Film (Viewer's Choice)",
+          },
+          {
+            value: 'national_film_awards_india_best_feature',
+            label: 'National Film Awards India Best Feature',
+            description:
+              'Winners of the National Film Award for Best Feature Film (India)',
+          },
+          {
+            value: 'national_film_preservation_board_usa',
+            label: 'National Film Registry',
+            description:
+              'Films selected for preservation in the United States National Film Registry',
+          },
+          {
+            value: 'peoples_choice_favorite_movie',
+            label: "People's Choice Favorite Movie",
+            description: "Winners of the People's Choice Award for Favorite Movie",
+          },
+          {
+            value: 'razzie_worst_picture',
+            label: 'Razzie Worst Picture',
+            description:
+              'Winners of the Golden Raspberry Award for Worst Picture',
+          },
+          {
+            value: 'screen_actors_guild_outstanding_cast',
+            label: 'SAG Awards Outstanding Cast',
+            description:
+              'Winners of the SAG Award for Outstanding Performance by a Cast in a Motion Picture',
+          },
+          {
+            value: 'sundance_grand_jury_prize',
+            label: 'Sundance Grand Jury Prize',
+            description:
+              'Winners of the Grand Jury Prize (Dramatic) at the Sundance Film Festival',
+          },
+          {
+            value: 'tiff_peoples_choice',
+            label: "TIFF People's Choice",
+            description:
+              "Winners of the People's Choice Award at the Toronto International Film Festival",
+          },
+          {
+            value: 'venice_golden_lion',
+            label: 'Venice Golden Lion',
+            description:
+              'Winners of the Golden Lion at the Venice Film Festival',
+          },
+          {
+            value: 'indian_television_academy_best_show',
+            label: 'ITA Best Show',
+            description:
+              'Winners of the Best Show awards at the Indian Television Academy Awards',
+          },
+          {
+            value: 'zee_rishtey_best_show',
+            label: 'Zee Rishtey Best Show',
+            description: 'Winners of the Best Show awards at the Zee Rishtey Awards',
+          },
+          {
+            value: 'nickelodeon_kids_choice_india_favorite_film',
+            label: "Nickelodeon Kids' Choice India Favorite Film",
+            description:
+              "Winners of the Favorite Film award at the Nickelodeon Kids' Choice Awards India",
+          },
+          {
+            value: 'indian_film_festival_melbourne_best_film',
+            label: 'IFFM Best Film',
+            description:
+              'Winners of the Best Film award at the Indian Film Festival of Melbourne',
+          },
+          {
+            value: 'filmfare_ott_best_series',
+            label: 'Filmfare OTT Best Series',
+            description: 'Winners of the Best Series award at the Filmfare OTT Awards',
+          },
+          {
+            value: 'critics_choice_india_best_series',
+            label: 'Critics Choice India Best Series',
+            description:
+              'Winners of the Best Series award at the Critics Choice Awards (India)',
+          },
+          {
+            value: 'iconic_gold_best_film',
+            label: 'Iconic Gold Best Film',
+            description: 'Winners of the Best Film award at the Iconic Gold Awards',
+          },
+          {
+            value: 'bollywood_film_journalist_best_film',
+            label: 'Bollywood Film Journalist Best Film',
+            description:
+              'Winners of the Best Film award at the Power Brands Bollywood Film Journalist Awards',
+          },
+          {
+            value: 'international_iconic_best_film',
+            label: 'International Iconic Best Film',
+            description:
+              'Winners of the Best Film award at the International Iconic Awards',
           },
         ];
       case 'letterboxd':

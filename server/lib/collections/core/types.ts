@@ -258,6 +258,8 @@ export interface MissingItem {
   title: string;
   /** Release year for movies, first air year for TV */
   year?: number;
+  /** Award year (specific to Awards source) */
+  awardYear?: number;
   /** Position in the original source list (1-based) */
   originalPosition: number;
   /** Optional additional metadata */
@@ -606,6 +608,7 @@ export interface AwardsSourceData {
   tmdbId?: number;
   title?: string;
   year?: number;
+  awardYear?: number;
   type: 'movie';
   originalPosition?: number;
 }

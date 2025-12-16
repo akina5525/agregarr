@@ -76,6 +76,7 @@ interface CollectionUpdateOptions {
   isLibraryPromoted?: boolean;
   totalCollectionsInLibrary?: number;
   customPoster?: string | Record<string, string>;
+  customSummary?: string;
   processedCollectionKeys?: Set<string>;
   libraryKey: string;
   config?: CollectionConfig;
@@ -977,6 +978,7 @@ export abstract class BaseCollectionSync<TSource extends CollectionSource>
           config as CollectionConfig & { _totalCollectionsInLibrary?: number }
         )._totalCollectionsInLibrary,
         customPoster: config.customPoster,
+        customSummary: config.customSummary,
         processedCollectionKeys,
         libraryKey: config.libraryId,
         config,
@@ -1773,6 +1775,7 @@ export abstract class BaseCollectionSync<TSource extends CollectionSource>
       isLibraryPromoted,
       customPoster,
       collectionName,
+      customSummary,
     } = options;
 
     // Add collection label
@@ -2110,8 +2113,15 @@ export abstract class BaseCollectionSync<TSource extends CollectionSource>
     }
 
     // Update summary if enabled and provided
-    const customSummary = options.config?.customSummary;
     const enableCustomSummary = options.config?.enableCustomSummary ?? false;
+
+    logger.debug('Checking summary update', {
+      label: 'Base Collection Sync',
+      enableCustomSummary,
+      hasCustomSummary: !!customSummary,
+      customSummaryLength: customSummary?.length,
+    });
+
     if (enableCustomSummary && customSummary) {
       try {
         await plexClient.updateSummary(collectionRatingKey, customSummary);
