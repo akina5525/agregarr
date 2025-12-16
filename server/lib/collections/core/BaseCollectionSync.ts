@@ -2499,7 +2499,7 @@ export abstract class BaseCollectionSync<TSource extends CollectionSource>
    */
   public async fetchSourceDataWithCache(
     config: CollectionConfig,
-    options?: CollectionSyncOptions & { useCache?: boolean },
+    options?: CollectionSyncOptions,
     libraryCache?: LibraryItemsCache
   ): Promise<CollectionSourceData[]> {
     const cacheKey = this.generateCacheKey(config);

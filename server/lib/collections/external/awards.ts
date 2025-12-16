@@ -46,8 +46,25 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
     return;
   }
 
+  // Include awards list URL in cache key to keep entries distinct per subtype/source
+  protected generateCacheKey(config: CollectionConfig): string {
+    const baseKey = super.generateCacheKey(config);
+    const awardsUrl = this.getAwardsUrl(config.subtype);
+    return awardsUrl ? `${baseKey}:${encodeURIComponent(awardsUrl)}` : baseKey;
+  }
+
   private isValidAwardsSubtype(subtype?: string): boolean {
     return subtype === 'academy_awards_best_picture_winners';
+  }
+
+  private getAwardsUrl(subtype?: string): string {
+    const subtypeUrlMap: Record<string, string> = {
+      academy_awards_best_picture_winners: AwardsCollectionSync.AWARDS_URL,
+    };
+
+    return subtype
+      ? subtypeUrlMap[subtype] ?? AwardsCollectionSync.AWARDS_URL
+      : AwardsCollectionSync.AWARDS_URL;
   }
 
   protected async processConfiguration(
@@ -66,9 +83,9 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
         );
       }
 
-      const sourceData = await this.fetchSourceData(
+      const sourceData = await this.fetchSourceDataWithCache(
         config,
-        options,
+        { ...options, useCache: options?.useCache ?? true },
         libraryCache
       );
 
@@ -174,7 +191,8 @@ export class AwardsCollectionSync extends BaseCollectionSync<'awards'> {
     libraryCache?: LibraryItemsCache // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Promise<AwardsSourceData[]> {
     try {
-      const response = await axios.get(AwardsCollectionSync.AWARDS_URL, {
+      const awardsUrl = this.getAwardsUrl(config.subtype);
+      const response = await axios.get(awardsUrl, {
         timeout: options?.apiTimeout ?? 15000,
       });
       const awardsData = YAML.parse(response.data);

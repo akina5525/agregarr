@@ -788,6 +788,8 @@ export interface CollectionSyncOptions {
   onError?: (error: CollectionSyncError) => void;
   /** Maximum number of items to process per collection */
   maxItemsPerCollection?: number;
+  /** Whether to allow cached source data when available (list caches) */
+  useCache?: boolean;
   /** Timeout for external API calls in milliseconds */
   apiTimeout?: number;
 }
