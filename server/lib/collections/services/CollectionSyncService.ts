@@ -519,6 +519,10 @@ export class CollectionSyncService {
         const { TmdbCollectionSync } = await import('../external/tmdb');
         return new TmdbCollectionSync();
       }
+      case 'awards': {
+        const { AwardsCollectionSync } = await import('../external/awards');
+        return new AwardsCollectionSync();
+      }
       case 'imdb': {
         const { ImdbCollectionSync } = await import('../external/imdb');
         return new ImdbCollectionSync();

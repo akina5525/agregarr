@@ -147,6 +147,7 @@ export type CollectionSource =
   | 'trakt'
   | 'tmdb'
   | 'imdb'
+  | 'awards'
   | 'letterboxd'
   | 'mdblist'
   | 'networks'
@@ -157,8 +158,7 @@ export type CollectionSource =
   | 'radarrtag'
   | 'sonarrtag'
   | 'comingsoon'
-  | 'filtered_hub'
-  | 'multi-source';
+  | 'filtered_hub';
 
 /**
  * Source types that can produce missing items for placeholders/auto-download
@@ -170,6 +170,7 @@ export type ItemProducingSource =
   | 'trakt'
   | 'tmdb'
   | 'imdb'
+  | 'awards'
   | 'letterboxd'
   | 'mdblist'
   | 'anilist'
@@ -401,6 +402,13 @@ export interface ImdbTemplateContext extends TemplateContext {
   statType?: 'top_250' | 'popular' | 'most_popular' | 'custom';
 }
 
+export interface AwardsTemplateContext extends TemplateContext {
+  /** Awards-specific subtype label */
+  subtype?: string;
+  /** Collection source type */
+  source?: 'awards';
+}
+
 export interface LetterboxdTemplateContext extends TemplateContext {
   /** Letterboxd list URL */
   listUrl: string;
@@ -457,6 +465,7 @@ export type SourceTemplateContext =
   | TmdbTemplateContext
   | TmdbFranchiseTemplateContext
   | ImdbTemplateContext
+  | AwardsTemplateContext
   | LetterboxdTemplateContext
   | NetworksTemplateContext
   | OriginalsTemplateContext
@@ -592,6 +601,15 @@ export interface ImdbSourceData {
   };
 }
 
+export interface AwardsSourceData {
+  imdbId: string;
+  tmdbId?: number;
+  title?: string;
+  year?: number;
+  type: 'movie';
+  originalPosition?: number;
+}
+
 export interface LetterboxdSourceData {
   title: string;
   year: number;
@@ -705,6 +723,7 @@ export type CollectionSourceData =
   | OverseerrSourceData
   | TmdbSourceData
   | ImdbSourceData
+  | AwardsSourceData
   | LetterboxdSourceData
   | NetworksSourceData
   | AniListSourceData

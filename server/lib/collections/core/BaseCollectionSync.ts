@@ -16,11 +16,11 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import path from 'path';
 import {
-  applyCollectionExclusions,
   createCollectionLabel,
   createSyncError,
   getCollectionMediaType,
   handleRateLimit,
+  applyCollectionExclusions,
   logCollectionProcessingResults,
   sanitizeCollectionName,
   updateConfigWithRatingKey,
@@ -2473,6 +2473,7 @@ export abstract class BaseCollectionSync<TSource extends CollectionSource>
       originals: 'originals-list',
       anilist: 'anilist-list',
       myanimelist: 'myanimelist-list',
+      awards: 'imdb-list',
       // Note: multi-source doesn't have its own cache, it uses individual source caches
     };
 
@@ -3090,6 +3091,17 @@ export abstract class BaseCollectionSync<TSource extends CollectionSource>
   }
 
   /**
+   * Apply collection mutual exclusion - remove items that exist in excluded collections
+   */
+  private async applyCollectionExclusions(
+    items: CollectionItem[],
+    config: CollectionConfig,
+    plexClient: PlexAPI
+  ): Promise<CollectionItem[]> {
+    return applyCollectionExclusions(items, config, plexClient, this.source);
+  }
+
+  /**
    * Process single media type collections (movie OR tv)
    */
   private async processSingleMediaType(
@@ -3122,11 +3134,10 @@ export abstract class BaseCollectionSync<TSource extends CollectionSource>
     }
 
     // Apply collection mutual exclusion if configured
-    filteredItems = await applyCollectionExclusions(
+    filteredItems = await this.applyCollectionExclusions(
       filteredItems,
       config,
-      plexClient,
-      this.source
+      plexClient
     );
 
     // Check again if we have items after exclusions

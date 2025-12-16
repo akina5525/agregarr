@@ -286,6 +286,10 @@ export const getSubtypeLabel = (type: string, subtype?: string): string => {
         default:
           return subtype;
       }
+    case 'awards':
+      return subtype
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (l) => l.toUpperCase());
     case 'mdblist':
       switch (subtype) {
         case 'custom':
@@ -428,6 +432,8 @@ export const getTypeLabel = (type: string): string => {
     ? 'TMDB'
     : type === 'imdb'
     ? 'IMDb'
+    : type === 'awards'
+    ? 'Awards'
     : type === 'mdblist'
     ? 'MDBList'
     : type === 'letterboxd'

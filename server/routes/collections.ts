@@ -1919,6 +1919,12 @@ collectionsRoutes.post(
         case 'imdb':
           context = templateEngine.createImdbContext(mediaType, subtype || '');
           break;
+        case 'awards':
+          context = templateEngine.createAwardsContext(
+            mediaType,
+            subtype || ''
+          );
+          break;
         case 'letterboxd':
           context = templateEngine.createLetterboxdContext(
             mediaType,

@@ -715,7 +715,6 @@ const AllCollectionsView: React.FC = () => {
                             }
                           />
                         )}
-
                       {/* Missing Items Badge - Shows when grab missing is enabled for collections */}
                       {isCollection && collection.originalConfig && (
                         <MissingItemsBadge
