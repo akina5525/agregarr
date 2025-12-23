@@ -477,7 +477,7 @@ class OverlayLibraryService {
 
       // Check if this is a placeholder (async version with API call for suspicious items)
       const { placeholderContextService } = await import(
-        '@server/lib/collections/services/PlaceholderContextService'
+        '@server/lib/placeholders/services/PlaceholderContextService'
       );
       const plexMetadata = item as {
         type: string;
@@ -826,6 +826,26 @@ class OverlayLibraryService {
       try {
         // Upload modified poster back to Plex
         await plexApi.uploadPosterFromFile(item.ratingKey, tempFilePath);
+
+        // Lock poster to prevent Plex from auto-updating it during library scans
+        try {
+          await plexApi.lockPoster(item.ratingKey);
+          logger.debug('Locked poster after overlay application', {
+            label: 'OverlayLibrary',
+            itemTitle: item.title,
+            ratingKey: item.ratingKey,
+          });
+        } catch (lockError) {
+          logger.warn('Failed to lock poster after overlay application', {
+            label: 'OverlayLibrary',
+            itemTitle: item.title,
+            ratingKey: item.ratingKey,
+            error:
+              lockError instanceof Error
+                ? lockError.message
+                : String(lockError),
+          });
+        }
 
         // Record overlay metadata tracking with base poster info
         try {
